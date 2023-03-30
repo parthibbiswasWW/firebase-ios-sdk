@@ -138,7 +138,7 @@
                                         <constraints>
                                             <constraint firstAttribute="height" constant="34" identifier="Title Label Height Constraint" id="Gzz-dd-hYn" userLabel="Title Label Height Constraint"/>
                                         </constraints>
-                                        <fontDescription key="fontDescription" style="UICTFontTextStyleTitle2"/>
+                                        <fontDescription key="fontDescription" name="FuturaStd-CondensedExtraBd" family="Futura Std" pointSize="28"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
@@ -187,7 +187,7 @@
                                         <constraints>
                                             <constraint firstAttribute="height" constant="100" identifier="Body Text View Height Constraint" id="h2w-ub-tEc"/>
                                         </constraints>
-                                        <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="10"/>
                                         <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                                     </textView>
                                 </subviews>
