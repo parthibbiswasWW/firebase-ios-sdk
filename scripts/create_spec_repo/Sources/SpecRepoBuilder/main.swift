@@ -60,7 +60,7 @@ public extension Date {
   }
 }
 
-// SpecFiles is a wraper of dict mapping from required pods to their path. This
+// SpecFiles is a wrapper of dict mapping from required pods to their path. This
 // will also contain a sequence of installing podspecs.
 class SpecFiles {
   private var specFilesDict: [String: URL]
@@ -125,7 +125,7 @@ enum SpecRepoBuilderError: Error {
   case failedToPush(pods: [String])
   // Error occurs when a podspec is not found in the repo.
   case podspecNotFound(_ podspec: String, from: String)
-  // Error occurs when a direotyr path cannot be determined.
+  // Error occurs when a directory path cannot be determined.
   case pathNotFound(_ path: String)
 }
 
@@ -238,7 +238,7 @@ struct SpecRepoBuilder: ParsableCommand {
         if depPrefix.hasSuffix(Constants.specDependencyLabel) {
           // e.g. In Firebase.podspec, Firebase/Core will not be considered a
           // dependency.
-          // "ss.dependency 'Firebase/Core'" will be splited in
+          // "ss.dependency 'Firebase/Core'" will be splitted in
           // ["ss.dependency", "'Firebase", "Core'"]
           let podNameRaw = String(tokens[1]).replacingOccurrences(of: "'", with: "")
           // In the example above, deps here will not include Firebase since
@@ -270,7 +270,7 @@ struct SpecRepoBuilder: ParsableCommand {
   func pushPodspec(forPod pod: URL, sdkRepo: String, sources: [String],
                    flags: [String], shell: Shell = Shell.shared) throws -> Int32 {
     let sourcesArg = sources.joined(separator: ",")
-    let flagsArgArr = allowWarnings ?flags + ["--allow-warnings"] : flags
+    let flagsArgArr = allowWarnings ? flags + ["--allow-warnings"] : flags
     let flagsArg = flagsArgArr.joined(separator: " ")
 
     do {
@@ -328,7 +328,7 @@ struct SpecRepoBuilder: ParsableCommand {
       )
       print("Found following unhidden dirs: \(dirs)")
       for dir in dirs {
-        guard let isDir = (try dir.resourceValues(forKeys: [.isDirectoryKey])).isDirectory else {
+        guard let isDir = try (dir.resourceValues(forKeys: [.isDirectoryKey])).isDirectory else {
           print("Error: cannot determine if \(dir.path) is a directory or not.")
           Self
             .exit(withError: SpecRepoBuilderError

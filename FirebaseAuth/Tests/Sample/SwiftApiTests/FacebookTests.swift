@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import Foundation
 import FirebaseAuth
+import Foundation
 import GTMSessionFetcher
 import XCTest
 
@@ -30,7 +30,7 @@ import XCTest
 //    let credential = FacebookAuthProvider.credential(withAccessToken: facebookAccessToken)
 //    let expectation = self.expectation(description: "Signing in with Facebook finished.")
 //    auth.signIn(with: credential) { result, error in
-//      if let error = error {
+//      if let error {
 //        XCTFail("Signing in with Facebook had error: \(error)")
 //      } else {
 //        XCTAssertEqual(auth.currentUser?.displayName, Credentials.kFacebookUserName)
@@ -44,7 +44,6 @@ import XCTest
 //    deleteFacebookTestingAccountbyID(facebookAccountID)
 //  }
 //
-//  #if compiler(>=5.5.2) && canImport(_Concurrency)
 //    @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
 //    func testSignInWithFacebookAsync() async throws {
 //      let auth = Auth.auth()
@@ -60,7 +59,6 @@ import XCTest
 //      try await deleteCurrentUserAsync()
 //      try await deleteFacebookTestingAccountbyIDAsync(facebookAccountID)
 //    }
-//  #endif
 //
 //  func testLinkAnonymousAccountToFacebookAccount() throws {
 //    let auth = Auth.auth()
@@ -71,7 +69,7 @@ import XCTest
 //    let credential = FacebookAuthProvider.credential(withAccessToken: facebookAccessToken)
 //    let expectation = self.expectation(description: "Facebook linking finished.")
 //    auth.currentUser?.link(with: credential, completion: { result, error in
-//      if let error = error {
+//      if let error {
 //        XCTFail("Link to Firebase error: \(error)")
 //      } else {
 //        guard let providers = (auth.currentUser?.providerData) else {
@@ -90,7 +88,6 @@ import XCTest
 //    deleteFacebookTestingAccountbyID(facebookAccountID)
 //  }
 //
-//  #if compiler(>=5.5.2) && canImport(_Concurrency)
 //    @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
 //    func testLinkAnonymousAccountToFacebookAccountAsync() async throws {
 //      let auth = Auth.auth()
@@ -111,11 +108,9 @@ import XCTest
 //      try await deleteCurrentUserAsync()
 //      try await deleteFacebookTestingAccountbyIDAsync(facebookAccountID)
 //    }
-//  #endif
 //
-//  /// ** Creates a Facebook testing account using Facebook Graph API and return a dictionary that
-//  // * constains "id", "access_token", "login_url", "email" and "password" of the created account.
-//  // */
+//  /// Creates a Facebook testing account using Facebook Graph API and return a dictionary that
+//  /// constrains "id", "access_token", "login_url", "email" and "password" of the created account.
 //  func createFacebookTestingAccount() -> [String: Any] {
 //    var returnValue: [String: Any] = [:]
 //    let urltoCreateTestUser = "https://graph.facebook.com/\(Credentials.kFacebookAppID)" +
@@ -129,7 +124,7 @@ import XCTest
 //    fetcher.setRequestValue("text/plain", forHTTPHeaderField: "Content-Type")
 //    let expectation = self.expectation(description: "Creating Facebook account finished.")
 //    fetcher.beginFetch { data, error in
-//      if let error = error {
+//      if let error {
 //        let error = error as NSError
 //        if let message = String(data: error.userInfo["data"] as! Data, encoding: .utf8) {
 //          // May get transient errors here for too many api calls when tests run frequently.
@@ -152,11 +147,10 @@ import XCTest
 //    return returnValue
 //  }
 //
-//  #if compiler(>=5.5.2) && canImport(_Concurrency)
 //    @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
-//    /// ** Creates a Facebook testing account using Facebook Graph API and return a dictionary that
-//    // * constains "id", "access_token", "login_url", "email" and "password" of the created account.
-//    // */
+//    /// Creates a Facebook testing account using Facebook Graph API and return a dictionary that
+//    /// constains "id", "access_token", "login_url", "email" and "password" of the created
+//    /// account.
 //    func createFacebookTestingAccountAsync() async throws -> [String: Any] {
 //      let urltoCreateTestUser = "https://graph.facebook.com/\(Credentials.kFacebookAppID)" +
 //        "/accounts/test-users"
@@ -175,7 +169,6 @@ import XCTest
 //      }
 //      return returnValue
 //    }
-//  #endif
 //
 //  // ** Delete a Facebook testing account by account Id using Facebook Graph API. */
 //  func deleteFacebookTestingAccountbyID(_ accountID: String) {
@@ -188,7 +181,7 @@ import XCTest
 //    fetcher.setRequestValue("text/plain", forHTTPHeaderField: "Content-Type")
 //    let expectation = self.expectation(description: "Deleting Facebook account finished.")
 //    fetcher.beginFetch { data, error in
-//      if let error = error {
+//      if let error {
 //        XCTFail("Deleting Facebook account failed with error: \(error)")
 //      }
 //      expectation.fulfill()
@@ -196,7 +189,6 @@ import XCTest
 //    waitForExpectations(timeout: TestsBase.kExpectationsTimeout)
 //  }
 //
-//  #if compiler(>=5.5.2) && canImport(_Concurrency)
 //    @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
 //    // ** Delete a Facebook testing account by account Id using Facebook Graph API. */
 //    func deleteFacebookTestingAccountbyIDAsync(_ accountID: String) async throws {
@@ -209,5 +201,4 @@ import XCTest
 //      fetcher.setRequestValue("text/plain", forHTTPHeaderField: "Content-Type")
 //      try await fetcher.beginFetch()
 //    }
-//  #endif
 // }

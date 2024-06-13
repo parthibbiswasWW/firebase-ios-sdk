@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import FirebaseManifest
 import Foundation
 import Utils
-import FirebaseManifest
 
 /// CocoaPod related utility functions. The enum type is used as a namespace here instead of having
 /// root functions, and no cases should be added to it.
@@ -50,7 +50,7 @@ enum CocoaPodUtils {
 
     init(name: String,
          version: String?,
-         platforms: Set<String> = ["ios", "macos", "tvos"]) {
+         platforms: Set<String> = ["ios", "macos", "tvos", "watchos"]) {
       self.name = name
       self.version = version
       self.platforms = platforms
@@ -62,7 +62,7 @@ enum CocoaPodUtils {
       if let platforms = try container.decodeIfPresent(Set<String>.self, forKey: .platforms) {
         self.platforms = platforms
       } else {
-        platforms = ["ios", "macos", "tvos"]
+        platforms = ["ios", "macos", "tvos", "watchos"]
       }
       if let version = try container.decodeIfPresent(String.self, forKey: .version) {
         self.version = version
@@ -136,8 +136,9 @@ enum CocoaPodUtils {
     let result = Shell.executeCommandFromScript("pod cache clean --all", outputToConsole: false)
     switch result {
     case let .error(code, _):
-      fatalError("Could not clean the pod cache, the command exited with \(code). Try running the" +
-        "command in Terminal to see what's wrong.")
+      fatalError("Could not clean the pod cache, the command exited with " +
+        "\(code). Try running the command in Terminal to see " +
+        "what's wrong.")
     case .success:
       // No need to do anything else, continue on.
       print("Successfully cleaned pod cache.")
@@ -163,7 +164,8 @@ enum CocoaPodUtils {
                                       localPodspecPath: localPodspecPath)
   }
 
-  /// Install an array of pods in a specific directory, returning a dictionary of PodInfo for each pod
+  /// Install an array of pods in a specific directory, returning a dictionary of PodInfo for each
+  /// pod
   /// that was installed.
   /// - Parameters:
   ///   - pods: List of VersionedPods to install
@@ -413,10 +415,12 @@ enum CocoaPodUtils {
   /// - Returns: A tuple of the framework and version, if it can be parsed.
   private static func detectVersion(fromLine input: String)
     -> (framework: String, version: String)? {
-    // Get the components of the line to parse them individually. Ignore any whitespace only Strings.
+    // Get the components of the line to parse them individually. Ignore any whitespace only
+    // Strings.
     let components = input.components(separatedBy: " ").filter { !$0.isEmpty }
 
-    // Expect three components: the `-`, the pod name, and the version in parens. This will filter out
+    // Expect three components: the `-`, the pod name, and the version in parens. This will filter
+    // out
     // dependencies that have version requirements like `(~> 3.2.1)` in it.
     guard components.count == 3 else { return nil }
 
@@ -429,7 +433,7 @@ enum CocoaPodUtils {
 
     // The third component is the version in parentheses, potentially with a `:` at the end. Let's
     // just strip the unused characters (including quotes) and return the version. We don't
-    // necesarily have to match against semver since it's a non trivial regex and we don't actually
+    // necessarily have to match against semver since it's a non trivial regex and we don't actually
     // care, `Podfile.lock` has a standard format that we know will be valid. Also strip out any
     // extra quotes.
     let version = components[2].trimmingCharacters(in: CharacterSet(charactersIn: "():\""))
@@ -490,8 +494,7 @@ enum CocoaPodUtils {
         podfile += "  pod '\(pod.name)', :path => '\(localURL.path)'"
       } else if let podVersion = pod.version {
         // To support Firebase patch versions in the Firebase zip distribution, allow patch updates
-        // for all pods except Firebase and FirebaseCore. The Firebase Swift pods are not yet in the
-        // zip distribution.
+        // for all pods except Firebase and FirebaseCore.
         var podfileVersion = podVersion
         if pod.name.starts(with: "Firebase"),
            !pod.name.hasSuffix("Swift"),

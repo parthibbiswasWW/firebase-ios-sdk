@@ -1,3 +1,16 @@
+# 10.27.0
+- [changed] Update internal socket implementation to use `NSURLSessionWebSocket` where
+  available. (#12883)
+
+# 10.25.0
+- [changed] Removed usages of user defaults API to eliminate required reason impact.
+
+# 10.17.0
+- [feature] The `FirebaseDatabase` module now contains Firebase Database's
+  Swift-only APIs that were previously only available via the
+  `FirebaseDatabaseSwift` extension SDK. See the
+  `FirebaseDatabaseSwift` release note from this release for more details.
+
 # 10.0.0
 - [deprecated] Deprecated `FirebaseDatabase` on watchOS 9 and above.
   watchOS users should instead use the Database REST API directly (#19272).
@@ -78,7 +91,7 @@
   high precision to be stored correctly in our persistence layer. (#4108)
 
 # 6.1.1
-- [fixed] Fixed an iOS 13 crash that occured in our WebSocket error handling. (#3950)
+- [fixed] Fixed an iOS 13 crash that occurred in our WebSocket error handling. (#3950)
 
 # 6.1.0
 - [fixed] Fix Catalyst Build issue. (#3512)

@@ -1,3 +1,17 @@
+# 10.17.0
+- [deprecated] All of the public API from `FirebaseFirestoreSwift` can now
+  be accessed through the `FirebaseFirestore` module. Therefore,
+  `FirebaseFirestoreSwift` has been deprecated, and will be removed in a
+  future release. See https://firebase.google.com/docs/ios/swift-migration for
+  migration instructions.
+
+# 10.12.0
+- [added] Added support animations on the `@FirestoreQuery` property wrapper.
+
+# 10.9.0
+- [changed] The async `CollectionReference.addDocument(data:)` API now returns
+  a discardable result. (#10640)
+
 # 10.4.0
 - [fixed] Restore 9.x Codable behavior of encoding `Data` types as an `NSData`
   blob instead of a String.

@@ -276,7 +276,7 @@ class StorageResultTests: StorageIntegrationCommon {
     let bundle = Bundle(for: StorageIntegrationCommon.self)
     let filePath = try XCTUnwrap(bundle.path(forResource: "1mb", ofType: "dat"),
                                  "Failed to get filePath")
-    let data = try XCTUnwrap(try Data(contentsOf: URL(fileURLWithPath: filePath)),
+    let data = try XCTUnwrap(Data(contentsOf: URL(fileURLWithPath: filePath)),
                              "Failed to load file")
     let tmpDirURL = URL(fileURLWithPath: NSTemporaryDirectory())
     let fileURL = tmpDirURL.appendingPathComponent("LargePutFile.txt")
@@ -325,7 +325,7 @@ class StorageResultTests: StorageIntegrationCommon {
     let bundle = Bundle(for: StorageIntegrationCommon.self)
     let filePath = try XCTUnwrap(bundle.path(forResource: "1mb", ofType: "dat"),
                                  "Failed to get filePath")
-    let data = try XCTUnwrap(try Data(contentsOf: URL(fileURLWithPath: filePath)),
+    let data = try XCTUnwrap(Data(contentsOf: URL(fileURLWithPath: filePath)),
                              "Failed to load file")
     let tmpDirURL = URL(fileURLWithPath: NSTemporaryDirectory())
     let fileURL = tmpDirURL.appendingPathComponent("LargePutFile.txt")
@@ -535,9 +535,9 @@ class StorageResultTests: StorageIntegrationCommon {
 
   func testSimpleGetFile() throws {
     let expectation = self.expectation(description: #function)
-    let ref = storage.reference(withPath: "ios/public/helloworld")
+    let ref = storage.reference(withPath: "ios/public/helloworld" + #function)
     let tmpDirURL = URL(fileURLWithPath: NSTemporaryDirectory())
-    let fileURL = tmpDirURL.appendingPathComponent("hello.txt")
+    let fileURL = tmpDirURL.appendingPathComponent(#function + "hello.txt")
     let data = try XCTUnwrap("Hello Swift World".data(using: .utf8), "Data construction failed")
 
     ref.putData(data) { result in
@@ -577,16 +577,15 @@ class StorageResultTests: StorageIntegrationCommon {
 
   func testCancelErrorCode() throws {
     let expectation = self.expectation(description: #function)
-    let ref = storage.reference(withPath: "ios/public/helloworld")
+    let ref = storage.reference(withPath: "ios/public/helloworld" + #function)
     let tmpDirURL = URL(fileURLWithPath: NSTemporaryDirectory())
-    let fileURL = tmpDirURL.appendingPathComponent("hello.txt")
+    let fileURL = tmpDirURL.appendingPathComponent(#function + "hello.txt")
     let data = try XCTUnwrap("Hello Swift World".data(using: .utf8), "Data construction failed")
 
     ref.putData(data) { result in
       switch result {
       case .success:
         let task = ref.write(toFile: fileURL)
-        task.cancel()
 
         task.observe(StorageTaskStatus.success) { snapshot in
           XCTFail("Error processing success snapshot")
@@ -603,6 +602,7 @@ class StorageResultTests: StorageIntegrationCommon {
           }
           expectation.fulfill()
         }
+        task.cancel()
       case let .failure(error):
         XCTFail("Unexpected error \(error) from putData")
         expectation.fulfill()
@@ -847,7 +847,7 @@ class StorageResultTests: StorageIntegrationCommon {
     let kFIRStorageIntegrationTestTimeout = 100.0
     waitForExpectations(timeout: kFIRStorageIntegrationTestTimeout,
                         handler: { error in
-                          if let error = error {
+                          if let error {
                             print(error)
                           }
                         })

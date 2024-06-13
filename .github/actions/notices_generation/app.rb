@@ -38,7 +38,7 @@ SEARCH_LOCAL_POD_VERSION=false
 begin
   OptionParser.new do |opts|
     opts.banner = "Usage: app.rb [options]"
-    opts.on('-p', '--pods PODS', 'Pods seperated by space or comma.') { |v| @options[:pods] = v.split(/[ ,]/) }
+    opts.on('-p', '--pods PODS', 'Pods separated by space or comma.') { |v| @options[:pods] = v.split(/[ ,]/) }
     opts.on('-s', '--sources SOURCES', 'Sources of Pods') { |v| @options[:sources] = v.split(/[ ,]/) }
     opts.on('-m', '--min_ios_version MIN_IOS_VERSION', 'Minimum iOS version') { |v| @options[:min_ios_version] = v }
     opts.on('-n', '--notices_path OUTPUT_PATH', 'The output path of NOTICES') { |v| @options[:output_path] = v }
@@ -81,7 +81,13 @@ def create_podfile(path: , sources: , target: , pods: [], min_ios_version: , sea
       # pod search Firebase | grep "pod.*" -m 1
       # will generate
       # pod 'Firebase', '~> 9.0.0'
-      output += `pod search "#{pod}" | grep "pod.*" -m 1`
+      # TODO: Re-enable below line post 10.28.0
+      # output += `pod search "#{pod}" | grep "pod.*" -m 1`
+      if pod.include?("FirebaseAppDistribution") || pod.include?("FirebaseInAppMessaging") || pod.include?("FirebaseMLModelDownloader")
+        output += "pod \'#{pod}\', \'~> 10.28.0-beta\'\n"
+      else
+        output += "pod \'#{pod}\', \'~> 10.28.0\'\n"
+      end
     else
       output += "pod \'#{pod}\'\n"
     end

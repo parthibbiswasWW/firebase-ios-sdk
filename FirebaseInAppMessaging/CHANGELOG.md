@@ -1,3 +1,34 @@
+# 10.27.0
+- [fixed] Fixed crash at app start that affected CocoaPods users using static
+  frameworks (#12882).
+
+# 10.26.0
+- [fixed] Fixed crash at app start that affected SwiftPM users (#12882).
+
+# 10.25.0
+- [changed] Removed usages of user defaults API to eliminate required reason
+  impact.
+- [changed] When installing In App Messaging via the zip distribution, its UI
+  resource bundle is now embedded within the In App Messaging framework.
+  Choose _Embed & Sign_ when integrating the framework. See the zip
+  distribution's README.md for more instructions.
+
+# 10.22.0
+- [fixed] Fixed an `objc_retain` crash. (#12393)
+
+# 10.17.0
+- [deprecated] All of the public API from `FirebaseInAppMessagingSwift` can now
+  be accessed through the `FirebaseInAppMessaging` module. Therefore,
+  `FirebaseInAppMessagingSwift` has been deprecated, and will be removed in a
+  future release. See https://firebase.google.com/docs/ios/swift-migration for
+  migration instructions.
+
+# 10.13.0
+- [fixed] Fix Firebase tvOS podspec dependency for In App Messaging. (#11569)
+
+# 10.10.0
+- [fixed] Crash on InApp message presentation when a CarPlay scene is active (#9376)
+
 # 10.0.0
 - [removed] Removed `foo` constant from Swift `InAppMessagingPreviewHelpers` API (#10222).
 - [fixed] Changed internal `dataChanged` symbol that triggered App Store warnings (#10276).

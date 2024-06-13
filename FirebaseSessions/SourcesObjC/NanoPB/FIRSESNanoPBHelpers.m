@@ -21,12 +21,18 @@
 
 #import "FirebaseSessions/SourcesObjC/Protogen/nanopb/sessions.nanopb.h"
 
+@import FirebaseCoreExtension;
+
 #import <nanopb/pb.h>
 #import <nanopb/pb_decode.h>
 #import <nanopb/pb_encode.h>
 #import <sys/sysctl.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+void nanopb_free(void *_Nullable ptr) {
+  pb_free(ptr);
+}
 
 NSError *FIRSESMakeEncodeError(NSString *description) {
   return [NSError errorWithDomain:@"FIRSESEncodeError"
@@ -41,6 +47,10 @@ NSString *FIRSESPBGetError(pb_istream_t istream) {
 // It seems impossible to specify the nullability of the `fields` parameter below,
 // yet the compiler complains that it's missing a nullability specifier. Google
 // yields no results at this time.
+//
+// Note 4/17/2023: The warning seems to be spurious (pb_field_t is a non-pointer
+// type) and is not present on Xcode 14+. This pragma can be removed after the
+// minimum supported Xcode version is above 14.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
 NSData *_Nullable FIRSESEncodeProto(const pb_field_t fields[],
@@ -86,7 +96,7 @@ pb_bytes_array_t *_Nullable FIRSESEncodeData(NSData *_Nullable data) {
   if (pbBytes == NULL) {
     return NULL;
   }
-  memcpy(pbBytes->bytes, [data bytes], data.length);
+  [data getBytes:pbBytes->bytes length:data.length];
   pbBytes->size = (pb_size_t)data.length;
   return pbBytes;
 }
@@ -174,29 +184,22 @@ NSString *_Nullable FIRSESGetSysctlEntry(const char *sysctlKey) {
   }
 }
 
-NSString *_Nullable FIRSESValidateMccMnc(NSString *_Nullable mcc, NSString *_Nullable mnc) {
-  // These are both nil if the target does not support mobile connectivity
-  if (mcc == nil && mnc == nil) {
-    return nil;
+NSData *FIRSESTransportBytes(const void *_Nonnull proto) {
+  const pb_field_t *fields = firebase_appquality_sessions_SessionEvent_fields;
+  NSError *error;
+  NSData *data = FIRSESEncodeProto(fields, proto, &error);
+  if (error != nil) {
+    FIRLogError(
+        @"FirebaseSessions", @"I-SES000001", @"%@",
+        [NSString stringWithFormat:@"Session Event failed to encode as proto with error: %@",
+                                   error.debugDescription]);
   }
-
-  if (mcc.length != 3 || mnc.length < 2 || mnc.length > 3) {
-    return nil;
+  if (data == nil) {
+    data = [NSData data];
+    FIRLogError(@"FirebaseSessions", @"I-SES000002",
+                @"Session Event generated nil transportBytes. Returning empty data.");
   }
-
-  // If the resulting appended mcc + mnc contains characters that are not
-  // decimal digits, return nil
-  static NSCharacterSet *notDigits;
-  static dispatch_once_t token;
-  dispatch_once(&token, ^{
-    notDigits = [[NSCharacterSet decimalDigitCharacterSet] invertedSet];
-  });
-  NSString *mccMnc = [mcc stringByAppendingString:mnc];
-  if ([mccMnc rangeOfCharacterFromSet:notDigits].location != NSNotFound) {
-    return nil;
-  }
-
-  return mccMnc;
+  return data;
 }
 
 NS_ASSUME_NONNULL_END

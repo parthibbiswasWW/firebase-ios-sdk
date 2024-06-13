@@ -1,3 +1,20 @@
+# 10.27.0
+- [fixed] Fixed bug preventing Messaging from working with a custom sqlite3
+  dependency (#12900).
+
+# 10.23.0
+- [fixed] [CocoaPods] Fix "no rule" warning when running `pod install`. (#12511)
+
+# 10.20.0
+- [fixed] Fix 10.19.0 regression where the FCM registration token was nil at first app start
+  after update from 10.19.0 or earlier. (#12245)
+
+# 10.19.0
+- [changed] Adopt NSSecureCoding for internal classes. (#12075)
+
+# 10.12.0
+- [changed] Removing fiam scoped tokens set by old FIAM SDK(s) from keychain if exists (b/284207019).
+
 # 10.6.0
 - [fixed] Configure flow validates existence of an APNS token before fetching an FCM token (#10742). This also addresses the scenario 1 mentioned in the comment - https://github.com/firebase/firebase-ios-sdk/issues/10679#issuecomment-1402776795
 

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'FirebaseInstallations'
-  s.version          = '10.8.0'
+  s.version          = '10.28.0'
   s.summary          = 'Firebase Installations'
 
   s.description      = <<-DESC
@@ -29,7 +29,7 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = tvos_deployment_target
   s.watchos.deployment_target = watchos_deployment_target
 
-  s.cocoapods_version = '>= 1.4.0'
+  s.cocoapods_version = '>= 1.12.0'
   s.prefix_header_file = false
 
   base_dir = "FirebaseInstallations/Source/"
@@ -40,6 +40,9 @@ Pod::Spec.new do |s|
   s.public_header_files = [
     base_dir + 'Library/Public/FirebaseInstallations/*.h',
   ]
+  s.resource_bundles = {
+    "#{s.module_name}_Privacy" => 'FirebaseInstallations/Source/Library/Resources/PrivacyInfo.xcprivacy'
+  }
 
   s.framework = 'Security'
   s.dependency 'FirebaseCore', '~> 10.0'
@@ -54,43 +57,37 @@ Pod::Spec.new do |s|
     'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}"'
   }
 
-  # Using environment variable because of the dependency on the unpublished
-  # HeartbeatLoggingTestUtils.
-  if ENV['POD_LIB_LINT_ONLY'] && ENV['POD_LIB_LINT_ONLY'] == '1' then
-    s.test_spec 'unit' do |unit_tests|
-      unit_tests.scheme = { :code_coverage => true }
-      unit_tests.platforms = {
-        :ios => ios_deployment_target,
-        :osx => '10.15',
-        :tvos => tvos_deployment_target
+  s.test_spec 'unit' do |unit_tests|
+    unit_tests.scheme = { :code_coverage => true }
+    unit_tests.platforms = {
+      :ios => ios_deployment_target,
+      :osx => '10.15',
+      :tvos => tvos_deployment_target
+    }
+    unit_tests.source_files = base_dir + 'Tests/Unit/*.[mh]',
+                              base_dir + 'Tests/Utils/*.[mh]',
+                              base_dir + 'Tests/Unit/Swift/*'
+    unit_tests.resources = base_dir + 'Tests/Fixture/**/*'
+    unit_tests.requires_app_host = true
+    unit_tests.dependency 'OCMock'
+
+    if ENV['FIS_IID_MIGRATION_TESTING'] && ENV['FIS_IID_MIGRATION_TESTING'] == '1' then
+      unit_tests.source_files += base_dir + 'Tests/Unit/IIDStoreTests/*.[mh]'
+    end
+  end
+
+  s.test_spec 'integration' do |int_tests|
+    int_tests.scheme = { :code_coverage => true }
+    int_tests.platforms = {:ios => '10.0', :osx => '10.15', :tvos => '11.0'}
+    int_tests.source_files = base_dir + 'Tests/Integration/**/*.[mh]'
+    int_tests.resources = base_dir + 'Tests/Resources/**/*'
+    if ENV['FIS_INTEGRATION_TESTS_REQUIRED'] && ENV['FIS_INTEGRATION_TESTS_REQUIRED'] == '1' then
+      int_tests.pod_target_xcconfig = {
+      'GCC_PREPROCESSOR_DEFINITIONS' =>
+        'FIR_INSTALLATIONS_INTEGRATION_TESTS_REQUIRED=1'
       }
-      unit_tests.source_files = base_dir + 'Tests/Unit/*.[mh]',
-                                base_dir + 'Tests/Utils/*.[mh]',
-                                base_dir + 'Tests/Unit/Swift/*'
-      unit_tests.resources = base_dir + 'Tests/Fixture/**/*'
-      unit_tests.requires_app_host = true
-      unit_tests.dependency 'OCMock'
-      unit_tests.dependency 'HeartbeatLoggingTestUtils'
-
-      if ENV['FIS_IID_MIGRATION_TESTING'] && ENV['FIS_IID_MIGRATION_TESTING'] == '1' then
-        unit_tests.source_files += base_dir + 'Tests/Unit/IIDStoreTests/*.[mh]'
-      end
     end
-
-    s.test_spec 'integration' do |int_tests|
-      int_tests.scheme = { :code_coverage => true }
-      int_tests.platforms = {:ios => '10.0', :osx => '10.15', :tvos => '11.0'}
-      int_tests.source_files = base_dir + 'Tests/Integration/**/*.[mh]'
-      int_tests.resources = base_dir + 'Tests/Resources/**/*'
-      if ENV['FIS_INTEGRATION_TESTS_REQUIRED'] && ENV['FIS_INTEGRATION_TESTS_REQUIRED'] == '1' then
-        int_tests.pod_target_xcconfig = {
-        'GCC_PREPROCESSOR_DEFINITIONS' =>
-          'FIR_INSTALLATIONS_INTEGRATION_TESTS_REQUIRED=1'
-        }
-      end
-      int_tests.requires_app_host = true
-      int_tests.dependency 'OCMock'
-      int_tests.dependency 'HeartbeatLoggingTestUtils'
-    end
+    int_tests.requires_app_host = true
+    int_tests.dependency 'OCMock'
   end
 end

@@ -1,3 +1,82 @@
+# 10.25.0
+- [fixed] Allow blob of data with zero length. (#11773, #12620)
+- [changed] Passing a non-nil value to the `@DocumentID` property wrapper's
+  setter no longer logs a warning since it discouraged valid patterns,
+  e.g., updating the document ID after the document is created in Firestore. (#12756)
+
+# 10.24.0
+- [feature] Enable queries with range & inequality filters on multiple fields. (#12416)
+
+# 10.23.0
+- [feature] Enable snapshot listener option to retrieve data from local cache only. (#12370)
+- [fixed] Update gRPC dependency to 1.62.* (#12098, #12021)
+- [feature] Firestore's binary Swift Package Manager distribution uses
+  XCFrameworks with code signatures (#12238).
+
+# 10.22.0
+- [fixed] Fix the flaky offline behaviour when using `arrayRemove` on `Map` object. (#12378)
+
+# 10.21.0
+- Add an error when trying to build Firestore's binary SPM distribution for
+  visionOS (#12279). See Firestore's 10.12.0 release note for a supported
+  workaround.
+
+# 10.19.0
+- [fixed] Made an optimization to the synchronization logic for resumed queries
+  to only re-download locally-cached documents that are known to be out-of-sync. (#12044)
+
+# 10.18.0
+- [fixed] Fix Firestore build for visionOS on Xcode 15.1. (#12023)
+
+# 10.17.0
+- [feature] Add support for sum and average aggregate queries.
+- [feature] The `FirebaseFirestore` module now contains Firebase Firestore's
+  Swift-only APIs that were previously only available via the
+  `FirebaseFirestoreSwift` extension SDK. See the
+  `FirebaseFirestoreSwift` release note from this release for more details.
+
+# 10.16.0
+- [fixed] Fixed an issue where Firestore's binary SwiftPM distribution would
+  not link properly when building a target for testing. This issue affected
+  Xcode 15 Beta 5 and later (#11656).
+- [fixed] Downgrade the CocoaPods grpc dependency back to 1.44.0 (from 1.50.1)
+  to fix a crash on iOS 12 devices that was introduced in the Firebase Apple SDK
+  10.10.0 when the grpc dependency was upgraded (#11509).
+
+# 10.15.0
+- [feature] Add the option to allow the SDK to create cache indexes automatically to
+  improve query execution locally. (#11596)
+
+# 10.12.0
+- [feature] Implemented an optimization in the local cache synchronization logic
+  that reduces the number of billed document reads when documents were deleted
+  on the server while the client was not actively listening to the query
+  (e.g. while the client was offline). (#11457)
+- [added] Developers using Firestore on **visionOS** must use a source
+  Firestore distribution rather than the default binary distribution. To do
+  this, quit Xcode and open the desired project from the command line
+  with the `FIREBASE_SOURCE_FIRESTORE` environment variable:
+  ```
+  open --env FIREBASE_SOURCE_FIRESTORE /path/to/project.xcodeproj
+  ```
+  To go back to using the binary distribution of Firestore, quit Xcode and
+  open Xcode like normal, without the environment variable. (#11492)
+
+# 10.11.0
+- [feature] Expose MultiDb API for public preview. (#10465)
+- [fixed] Fixed a compilation warning related to integer casting. (#11332)
+- [fixed] Allow initializing FIRLocalCacheSettings with unlimited size. (#11405)
+
+# 10.9.0
+- [feature] Add new cache config API to customize SDK cache settings.
+- [feature] Add LRU garbage collector as an option to memory cache.
+
+# 10.8.0
+- [feature] Change Firestore's Swift Package Manager distribution from source
+  to binary to reduce the time it takes to add the Firebase package and to
+  build the Firestore SDK (#6564).
+- [fixed] Fixed SSL symbol collision issue affecting SwiftPM users. (#6869)
+
 # 10.7.0
 - [feature] Add support for disjunctions in queries (`OR` queries).
 - [fixed] Fixed stack overflow caused by deeply nested server timestamps.
@@ -409,7 +488,7 @@
 - [changed] Firestore no longer bundles a copy of the gRPC certificates, now
   that the gRPC-C++ CocoaPod includes them. CocoaPods users should be updated
   automatically. Carthage users should follow the [updated
-  instructions](https://github.com/firebase/firebase-ios-sdk/blob/master/Carthage.md)
+  instructions](https://github.com/firebase/firebase-ios-sdk/blob/main/Carthage.md)
   to get `gRPCCertificates.bundle` from the correct location.
 
 # 0.16.1

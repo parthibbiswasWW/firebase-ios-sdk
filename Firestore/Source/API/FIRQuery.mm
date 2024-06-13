@@ -20,9 +20,11 @@
 #include <utility>
 #include <vector>
 
-#import "FIRAggregateQuery+Internal.h"
 #import "FIRDocumentReference.h"
 #import "FIRFirestoreErrors.h"
+
+#import "Firestore/Source/API/FIRAggregateField+Internal.h"
+#import "Firestore/Source/API/FIRAggregateQuery+Internal.h"
 #import "Firestore/Source/API/FIRDocumentReference+Internal.h"
 #import "Firestore/Source/API/FIRDocumentSnapshot+Internal.h"
 #import "Firestore/Source/API/FIRFieldPath+Internal.h"
@@ -35,6 +37,7 @@
 #import "Firestore/Source/API/FIRQuerySnapshot+Internal.h"
 #import "Firestore/Source/API/FIRSnapshotMetadata+Internal.h"
 #import "Firestore/Source/API/FSTUserDataReader.h"
+#import "Firestore/Source/API/converters.h"
 
 #include "Firestore/core/src/api/query_core.h"
 #include "Firestore/core/src/api/query_listener_registration.h"
@@ -58,10 +61,8 @@
 #include "Firestore/core/src/nanopb/nanopb_util.h"
 #include "Firestore/core/src/util/error_apple.h"
 #include "Firestore/core/src/util/exception.h"
-#include "Firestore/core/src/util/hard_assert.h"
 #include "Firestore/core/src/util/statusor.h"
 #include "Firestore/core/src/util/string_apple.h"
-#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 
 namespace nanopb = firebase::firestore::nanopb;
@@ -69,6 +70,7 @@ using firebase::firestore::google_firestore_v1_ArrayValue;
 using firebase::firestore::google_firestore_v1_Value;
 using firebase::firestore::google_firestore_v1_Value_fields;
 using firebase::firestore::api::Firestore;
+using firebase::firestore::api::MakeListenSource;
 using firebase::firestore::api::Query;
 using firebase::firestore::api::QueryListenerRegistration;
 using firebase::firestore::api::QuerySnapshot;
@@ -189,6 +191,13 @@ int32_t SaturatedLimitValue(NSInteger limit) {
                                          listener:(FIRQuerySnapshotBlock)listener {
   auto options = ListenOptions::FromIncludeMetadataChanges(includeMetadataChanges);
   return [self addSnapshotListenerInternalWithOptions:options listener:listener];
+}
+
+- (id<FIRListenerRegistration>)addSnapshotListenerWithOptions:(FIRSnapshotListenOptions *)options
+                                                     listener:(FIRQuerySnapshotBlock)listener {
+  ListenOptions listenOptions =
+      ListenOptions::FromOptions(options.includeMetadataChanges, MakeListenSource(options.source));
+  return [self addSnapshotListenerInternalWithOptions:listenOptions listener:listener];
 }
 
 - (id<FIRListenerRegistration>)addSnapshotListenerInternalWithOptions:(ListenOptions)internalOptions
@@ -484,7 +493,12 @@ int32_t SaturatedLimitValue(NSInteger limit) {
 }
 
 - (FIRAggregateQuery *)count {
-  return [[FIRAggregateQuery alloc] initWithQuery:self];
+  FIRAggregateField *countAF = [FIRAggregateField aggregateFieldForCount];
+  return [[FIRAggregateQuery alloc] initWithQuery:self aggregateFields:@[ countAF ]];
+}
+
+- (FIRAggregateQuery *)aggregate:(NSArray<FIRAggregateField *> *)aggregateFields {
+  return [[FIRAggregateQuery alloc] initWithQuery:self aggregateFields:aggregateFields];
 }
 
 #pragma mark - Private Methods
@@ -582,7 +596,7 @@ int32_t SaturatedLimitValue(NSInteger limit) {
   }
   const Document &document = *snapshot.internalDocument;
   const DatabaseId &databaseID = self.firestore.databaseID;
-  const std::vector<OrderBy> &order_bys = self.query.order_bys();
+  const std::vector<OrderBy> &order_bys = self.query.normalized_order_bys();
 
   SharedMessage<google_firestore_v1_ArrayValue> components{{}};
   components->values_count = CheckedSize(order_bys.size());

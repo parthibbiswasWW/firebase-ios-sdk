@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <string>
 #include <unordered_set>
 #include <utility>
 
@@ -36,7 +37,7 @@ using model::IndexOffset;
 /**
  * The maximum number of documents to process each time Backfill() is called.
  */
-static const int kMaxDocumentsToProcess = 50;
+static const size_t kMaxDocumentsToProcess = 50;
 
 }  // namespace
 
@@ -44,10 +45,10 @@ IndexBackfiller::IndexBackfiller() {
   max_documents_to_process_ = kMaxDocumentsToProcess;
 }
 
-int IndexBackfiller::WriteIndexEntries(const LocalStore* local_store) {
+size_t IndexBackfiller::WriteIndexEntries(const LocalStore* local_store) {
   IndexManager* index_manager = local_store->index_manager();
   std::unordered_set<std::string> processed_collection_groups;
-  int documents_remaining = max_documents_to_process_;
+  size_t documents_remaining = max_documents_to_process_;
   while (documents_remaining > 0) {
     const auto collection_group =
         index_manager->GetNextCollectionGroupToUpdate();
@@ -64,10 +65,10 @@ int IndexBackfiller::WriteIndexEntries(const LocalStore* local_store) {
   return max_documents_to_process_ - documents_remaining;
 }
 
-int IndexBackfiller::WriteEntriesForCollectionGroup(
+size_t IndexBackfiller::WriteEntriesForCollectionGroup(
     const LocalStore* local_store,
     const std::string& collection_group,
-    int documents_remaining_under_cap) const {
+    size_t documents_remaining_under_cap) const {
   IndexManager* index_manager = local_store->index_manager();
   const auto* const local_documents_view = local_store->local_documents();
 

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'FirebaseStorage'
-  s.version          = '10.8.0'
+  s.version          = '10.28.0'
   s.summary          = 'Firebase Storage'
 
   s.description      = <<-DESC
@@ -29,7 +29,7 @@ Firebase Storage provides robust, secure file uploads and downloads from Firebas
 
   s.swift_version = '5.3'
 
-  s.cocoapods_version = '>= 1.4.0'
+  s.cocoapods_version = '>= 1.12.0'
   s.prefix_header_file = false
 
   s.source_files = [
@@ -38,10 +38,11 @@ Firebase Storage provides robust, secure file uploads and downloads from Firebas
   ]
 
   s.dependency 'FirebaseAppCheckInterop', '~> 10.0'
-  s.dependency 'FirebaseAuthInterop', '~> 10.0'
+  s.dependency 'FirebaseAuthInterop', '~> 10.25'
   s.dependency 'FirebaseCore', '~> 10.0'
   s.dependency 'FirebaseCoreExtension', '~> 10.0'
   s.dependency 'GTMSessionFetcher/Core', '>= 2.1', '< 4.0'
+  s.dependency 'GoogleUtilities/Environment', '~> 7.12'
 
   s.test_spec 'ObjCIntegration' do |objc_tests|
     objc_tests.scheme = { :code_coverage => true }
@@ -70,6 +71,7 @@ Firebase Storage provides robust, secure file uploads and downloads from Firebas
       :tvos => tvos_deployment_target
     }
     unit_tests.source_files = 'FirebaseStorage/Tests/Unit/StorageAPITests.swift'
+    unit_tests.requires_app_host = true
   end
 
   s.test_spec 'integration' do |int_tests|

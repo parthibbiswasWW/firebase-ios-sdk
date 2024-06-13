@@ -1,4 +1,7 @@
-# unreleased
+# 10.27.0
+- [added] Added deprecation warning in advance of August 25, 2025 Dynamic Links service shutdown. (#12995)
+
+# 10.3.0
 - [fixed] Fixes issue where `utmParametersDictionary` / `minimumAppVersion` were not provided and their value were set to `[NSNull null]` instead of `nil`.
 
 # 10.2.0
@@ -69,7 +72,7 @@
 - [fixed] Reduce frequency of iOS14 pasteboard notifications by only reading from it when it contains URL(s). (#5905)
 - [changed] Functionally neutral updated import references for dependencies. (#5824)
 
-Refer to the [README.md](https://github.com/firebase/firebase-ios-sdk/blob/master/FirebaseDynamicLinks/README.md) for more details about this release.
+Refer to the [README.md](https://github.com/firebase/firebase-ios-sdk/blob/main/FirebaseDynamicLinks/README.md) for more details about this release.
 
 # 4.1.0
 - [fixed] Fixing unwanted pending dynamic links checks on subsequent app restarts. (#5665)

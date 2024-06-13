@@ -33,7 +33,9 @@
 @class FIRFirestore;
 @class FIRFirestoreSettings;
 @class FIRQuery;
+@class FIRWriteBatch;
 @class FSTEventAccumulator;
+@class FIRTransaction;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -45,6 +47,9 @@ extern "C" {
 
 /** Returns the default Firestore project ID for testing. */
 + (NSString *)projectID;
+
+/** Returns the default Firestore database ID for testing. */
++ (NSString *)databaseID;
 
 + (bool)isRunningAgainstEmulator;
 
@@ -109,15 +114,23 @@ extern "C" {
 - (FIRDocumentReference *)addDocumentRef:(FIRCollectionReference *)ref
                                     data:(NSDictionary<NSString *, id> *)data;
 
+- (void)runTransaction:(FIRFirestore *)db
+                 block:(id _Nullable (^)(FIRTransaction *, NSError **error))block
+            completion:(nullable void (^)(id _Nullable result, NSError *_Nullable error))completion;
+
 - (void)mergeDocumentRef:(FIRDocumentReference *)ref data:(NSDictionary<NSString *, id> *)data;
 
 - (void)mergeDocumentRef:(FIRDocumentReference *)ref
                     data:(NSDictionary<NSString *, id> *)data
                   fields:(NSArray<id> *)fields;
 
+- (void)commitWriteBatch:(FIRWriteBatch *)batch;
+
 - (void)disableNetwork;
 
 - (void)enableNetwork;
+
+- (void)checkOnlineAndOfflineQuery:(FIRQuery *)query matchesResult:(NSArray *)expectedDocs;
 
 /**
  * "Blocks" the current thread/run loop until the block returns YES.
@@ -141,6 +154,9 @@ NSArray<NSString *> *FIRQuerySnapshotGetIDs(FIRQuerySnapshot *docs);
 /** Converts the FIRQuerySnapshot to an NSArray containing an NSArray containing the doc change data
  * in order of { type, doc title, doc data }. */
 NSArray<NSArray<id> *> *FIRQuerySnapshotGetDocChangesData(FIRQuerySnapshot *docs);
+
+/** Gets the FIRDocumentReference objects from a FIRQuerySnapshot and returns them. */
+NSArray<FIRDocumentReference *> *FIRDocumentReferenceArrayFromQuerySnapshot(FIRQuerySnapshot *);
 
 #if __cplusplus
 }  // extern "C"

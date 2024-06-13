@@ -39,7 +39,7 @@
     func setData(_ documentData: [String: Any]) -> Future<Void, Error> {
       Future { promise in
         self.setData(documentData) { error in
-          if let error = error {
+          if let error {
             promise(.failure(error))
           } else {
             promise(.success(()))
@@ -62,7 +62,7 @@
     func setData(_ documentData: [String: Any], merge: Bool) -> Future<Void, Error> {
       Future { promise in
         self.setData(documentData, merge: merge) { error in
-          if let error = error {
+          if let error {
             promise(.failure(error))
           } else {
             promise(.success(()))
@@ -88,7 +88,7 @@
     func setData(_ documentData: [String: Any], mergeFields: [Any]) -> Future<Void, Error> {
       Future { promise in
         self.setData(documentData, mergeFields: mergeFields) { error in
-          if let error = error {
+          if let error {
             promise(.failure(error))
           } else {
             promise(.success(()))
@@ -99,9 +99,9 @@
 
     #if canImport(FirebaseFirestoreSwift)
 
-      /// Encodes an instance of `Encodable` and overwrites the encoded data to the document referred
-      ///  by this `DocumentReference`. If no document exists, it is created. If a document already
-      ///  exists, it is overwritten.
+      /// Encodes an instance of `Encodable` and overwrites the encoded data to the document
+      ///  referred by this `DocumentReference`. If no document exists, it is created. If a
+      ///  document already exists, it is overwritten.
       ///
       /// - Parameters:
       ///   - value: An instance of `Encodable` to be encoded to a document.
@@ -117,7 +117,7 @@
         Future { promise in
           do {
             try self.setData(from: value, encoder: encoder) { error in
-              if let error = error {
+              if let error {
                 promise(.failure(error))
               } else {
                 promise(.success(()))
@@ -129,9 +129,11 @@
         }
       }
 
-      /// Encodes an instance of `Encodable` and overwrites the encoded data to the document referred
+      /// Encodes an instance of `Encodable` and overwrites the encoded data to the document
+      /// referred
       ///  by this `DocumentReference`. If no document exists, it is created. If a document already
-      ///  exists, it is overwritten. If you pass `merge: true`, the provided Encodable will be merged
+      ///  exists, it is overwritten. If you pass `merge: true`, the provided Encodable will be
+      /// merged
       ///   into any existing document.
       ///
       /// - Parameters:
@@ -149,7 +151,7 @@
         Future { promise in
           do {
             try self.setData(from: value, merge: merge, encoder: encoder) { error in
-              if let error = error {
+              if let error {
                 promise(.failure(error))
               } else {
                 promise(.success(()))
@@ -162,7 +164,8 @@
       }
 
       /// Encodes an instance of `Encodable` and writes the encoded data to the document referred by
-      /// this `DocumentReference` by only replacing the fields specified under mergeFields. Any field
+      /// this `DocumentReference` by only replacing the fields specified under mergeFields. Any
+      /// field
       /// that is not specified in mergeFields is ignored and remains untouched. If the document
       /// doesn’t yet exist, this method creates it and then sets the data.
       ///
@@ -183,7 +186,7 @@
         Future { promise in
           do {
             try self.setData(from: value, mergeFields: mergeFields, encoder: encoder) { error in
-              if let error = error {
+              if let error {
                 promise(.failure(error))
               } else {
                 promise(.success(()))
@@ -211,7 +214,7 @@
     func updateData(_ documentData: [String: Any]) -> Future<Void, Error> {
       Future { promise in
         self.updateData(documentData) { error in
-          if let error = error {
+          if let error {
             promise(.failure(error))
           } else {
             promise(.success(()))
@@ -230,7 +233,7 @@
     func delete() -> Future<Void, Error> {
       Future { promise in
         self.delete { error in
-          if let error = error {
+          if let error {
             promise(.failure(error))
           } else {
             promise(.success(()))
@@ -251,9 +254,9 @@
       -> Future<DocumentSnapshot, Error> {
       Future { promise in
         self.getDocument(source: source) { snapshot, error in
-          if let error = error {
+          if let error {
             promise(.failure(error))
-          } else if let snapshot = snapshot {
+          } else if let snapshot {
             promise(.success(snapshot))
           }
         }
@@ -272,9 +275,9 @@
       let subject = PassthroughSubject<DocumentSnapshot, Error>()
       let listenerHandle =
         addSnapshotListener(includeMetadataChanges: includeMetadataChanges) { snapshot, error in
-          if let error = error {
+          if let error {
             subject.send(completion: .failure(error))
-          } else if let snapshot = snapshot {
+          } else if let snapshot {
             subject.send(snapshot)
           }
         }

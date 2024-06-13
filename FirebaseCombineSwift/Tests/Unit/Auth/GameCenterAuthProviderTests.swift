@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Foundation
 import Combine
+import FirebaseAuth
+import Foundation
 import GameKit
 import XCTest
-import FirebaseAuth
 
 class GameCenterAuthProviderTests: XCTestCase {
   override class func setUp() {
@@ -56,7 +56,7 @@ class GameCenterAuthProviderTests: XCTestCase {
     override func generateIdentityVerificationSignature(completionHandler: ((URL?, Data?, Data?,
                                                                              UInt64,
                                                                              Error?) -> Void)? =
-      nil) {
+        nil) {
       let url = URL(string: GameCenterAuthProviderTests.publicKeyURL)
       let signature = Data(base64Encoded: GameCenterAuthProviderTests.signature)
       let salt = Data(base64Encoded: GameCenterAuthProviderTests.salt)

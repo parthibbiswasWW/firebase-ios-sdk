@@ -32,6 +32,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/// Deinitializes a nanopb struct. Rewritten here to expose to Swift, since `pb_free` is a macro.
+void nanopb_free(void* _Nullable);
+
 /// Returns an error associated with the istream. Written in Objective-C because Swift does not
 /// support C language macros
 NSString* FIRSESPBGetError(pb_istream_t istream);
@@ -88,8 +91,8 @@ pb_size_t FIRSESGetAppleApplicationInfoTag(void);
 /// private method in GULAppEnvironmentUtil.
 NSString* _Nullable FIRSESGetSysctlEntry(const char* sysctlKey);
 
-/// Returns the validated MccMnc if it is available, or nil if the device does not support telephone
-NSString* _Nullable FIRSESValidateMccMnc(NSString* _Nullable mcc, NSString* _Nullable mnc);
+/// C function to bridge from Swift to do nanopb bytes transfer.
+NSData* FIRSESTransportBytes(const void* _Nonnull proto);
 
 NS_ASSUME_NONNULL_END
 

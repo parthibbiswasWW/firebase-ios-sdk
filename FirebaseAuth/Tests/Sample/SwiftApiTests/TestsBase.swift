@@ -14,33 +14,31 @@
  * limitations under the License.
  */
 
-import Foundation
 import FirebaseAuth
+import Foundation
 import XCTest
 
 class TestsBase: XCTestCase {
   static let kExpectationsTimeout = 10.0
 
-  #if compiler(>=5.5.2) && canImport(_Concurrency)
-    @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
-    func signInAnonymouslyAsync() async throws {
-      let auth = Auth.auth()
-      try await auth.signInAnonymously()
-    }
+  @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
+  func signInAnonymouslyAsync() async throws {
+    let auth = Auth.auth()
+    try await auth.signInAnonymously()
+  }
 
-    @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
-    func deleteCurrentUserAsync() async throws {
-      let auth = Auth.auth()
-      try await auth.currentUser?.delete()
-    }
-  #endif
+  @available(iOS 13, tvOS 13, macOS 10.15, macCatalyst 13, watchOS 7, *)
+  func deleteCurrentUserAsync() async throws {
+    let auth = Auth.auth()
+    try await auth.currentUser?.delete()
+  }
 
   func signInAnonymously() {
     let auth = Auth.auth()
 
     let expectation = self.expectation(description: "Anonymous sign-in finished.")
     auth.signInAnonymously { result, error in
-      if let error = error {
+      if let error {
         print("Anonymous sign in error: \(error)")
       }
       expectation.fulfill()
@@ -61,7 +59,7 @@ class TestsBase: XCTestCase {
     let auth = Auth.auth()
     let expectation = self.expectation(description: "Delete current user finished.")
     auth.currentUser?.delete { error in
-      if let error = error {
+      if let error {
         print("Anonymous sign in error: \(error)")
       }
       expectation.fulfill()

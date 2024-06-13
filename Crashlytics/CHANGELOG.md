@@ -1,3 +1,51 @@
+# 10.28.0
+- [fixed] Created a new queue for rollouts persistence writes and made sure rollouts logging queue is not nil while dispatching (#12913).
+
+# 10.27.0
+- [added] Added support for catching the SIGTERM signal (#12881).
+- [fixed] Fixed a hang when persisting Remote Config Rollouts to disk (#12913).
+
+# 10.25.0
+- [changed] Removed usages of user defaults API from internal Firebase Sessions
+  dependency to eliminate required reason impact.
+
+# 10.24.0
+- [fixed] Fix `'FirebaseCrashlytics/FirebaseCrashlytics-Swift.h' file not found`
+  errors (#12611).
+- [changed] Remove usages of `mach_absolute_time` to reduce required reason impact.
+
+# 10.23.0
+- [added] Updated upload-symbols to 13.7 with VisionPro build phase support. (#12306)
+- [changed] Added support for Crashlytics to report metadata about Remote Config keys and values.
+
+# 10.22.0
+- [fixed] Force validation or rotation of FIDs for FirebaseSessions.
+- [changed] Removed calls to statfs in the Crashlytics SDK to comply with Apple Privacy Manifests. This change removes support for collecting Disk Space Free in Crashlytics reports.
+- [fixed] Fixed FirebaseSessions crash on startup that occurs in release mode in Xcode 15.3 and other build configurations. (#11403)
+
+# 10.16.0
+- [fixed] Fixed a memory leak regression when generating session events (#11725).
+
+# 10.12.0
+- [changed] Updated `upload-symbols` to version 3.16 with support for new default build settings in Xcode 15 (#11463)
+- [changed] Re-enabled dSYM uploads for Flutter apps building with `--obfuscate` and updated instructions for de-obfuscating Dart stacktraces
+- [fixed] `upload-symbols` / `run` now support apps with `User Script Sandboxing` set to `YES` when all input files are present in the build phase. Please see the Pull Request for the full list of input files (#11463)
+- [fixed] `upload-symbols` / `run` no longer read from the app's Info.plist and supports apps with `Generate Info.plist File` set to `NO` (#11463)
+- [added] Added a `CrashlyticsInputFiles.xcfilelist`. Instead of using "Input Files", developers can specify the path to this file in the Build Phase's "Input File Lists" section of your Crashlytics `run` / `upload-symbols` script to keep it up to date (#11428)
+
+# 10.11.0
+- [fixed] Fixed a threading-related hang during initialization in urgent mode (#11216)
+
+# 10.10.0
+- [changed] Removed references to deprecated CTCarrier API in FirebaseSessions. (#11144)
+- [fixed] Fix Xcode 14.3 Analyzer issue. (#11228)
+
+# 10.9.0
+- [fixed] Updated upload-symbols to 3.15. Disabled dSYM uploads for Flutter
+  apps building with --obfuscate and added instructions for uploading through
+  the Crashlytics dashboard. (#11136)
+- [fixed] Fixed a memory leak when generating session events (#11027).
+
 # 10.7.0
 - [fixed] Updated upload-symbols to 3.14 with an improvement to upload all dSYM files for Flutter apps
 
@@ -141,7 +189,7 @@
 
 This Firebase Crashlytics version includes the initial beta release of the Firebase Crashlytics SDK:
 
- - [feature] The SDK is now open-sourced. Take a look in our [GitHub repository](https://github.com/firebase/firebase-ios-sdk/tree/master/Crashlytics).
+ - [feature] The SDK is now open-sourced. Take a look in our [GitHub repository](https://github.com/firebase/firebase-ios-sdk/tree/main/Crashlytics).
  - [feature] Added support for Catalyst (note that Crashlytics still supports tvOS and macOS).
  - [feature] Added new APIs that are more consistent with other Firebase SDKs and more intuitive to use. The new APIs also give your users more control over how you collect their data.
  - [removed] Removed the Fabric API Key. Now, Crashlytics uses the GoogleService-Info.plist file to associate your app with your project. If you linked your app from Fabric and want to upgrade to the new SDK, remove the Fabric API key from your `run` and `upload-symbols` scripts. We also recommend removing the Fabric section from your app's Info.plist (when you upgrade, Crashlytics uses the new configuration you set up in Firebase).

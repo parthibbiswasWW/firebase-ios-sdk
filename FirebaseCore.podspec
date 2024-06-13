@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'FirebaseCore'
-  s.version          = '10.8.0'
+  s.version          = '10.28.0'
   s.summary          = 'Firebase Core'
 
   s.description      = <<-DESC
@@ -28,13 +28,17 @@ Firebase Core includes FIRApp and FIROptions which provide central configuration
   s.tvos.deployment_target = tvos_deployment_target
   s.watchos.deployment_target = watchos_deployment_target
 
-  s.cocoapods_version = '>= 1.4.0'
+  s.cocoapods_version = '>= 1.12.0'
   s.prefix_header_file = false
 
   s.source_files = [
     'FirebaseCore/Sources/**/*.[mh]',
     'FirebaseCore/Extension/*.h'
   ]
+
+  s.resource_bundles = {
+    "#{s.module_name}_Privacy" => 'FirebaseCore/Sources/Resources/PrivacyInfo.xcprivacy'
+  }
 
   s.swift_version = '5.3'
 
@@ -47,8 +51,8 @@ Firebase Core includes FIRApp and FIROptions which provide central configuration
   s.watchos.framework = 'WatchKit'
 
   # Remember to also update version in `cmake/external/GoogleUtilities.cmake`
-  s.dependency 'GoogleUtilities/Environment', '~> 7.8'
-  s.dependency 'GoogleUtilities/Logger', '~> 7.8'
+  s.dependency 'GoogleUtilities/Environment', '~> 7.12'
+  s.dependency 'GoogleUtilities/Logger', '~> 7.12'
   s.dependency 'FirebaseCoreInternal', '~> 10.0'
 
   s.pod_target_xcconfig = {
@@ -58,26 +62,21 @@ Firebase Core includes FIRApp and FIROptions which provide central configuration
     'OTHER_CFLAGS' => '-fno-autolink'
   }
 
-  # Using environment variable because of the dependency on the unpublished
-  # HeartbeatLoggingTestUtils.
-  if ENV['POD_LIB_LINT_ONLY'] && ENV['POD_LIB_LINT_ONLY'] == '1' then
-    s.test_spec 'unit' do |unit_tests|
-      unit_tests.scheme = { :code_coverage => true }
-      unit_tests.platforms = {
-        :ios => ios_deployment_target,
-        :osx => '10.15',
-        :tvos => tvos_deployment_target
-      }
-      unit_tests.source_files = [
-        'FirebaseCore/Tests/Unit/**/*.[mh]',
-        'SharedTestUtilities/FIROptionsMock.[mh]',
-      ]
+  s.test_spec 'unit' do |unit_tests|
+    unit_tests.scheme = { :code_coverage => true }
+    unit_tests.platforms = {
+      :ios => ios_deployment_target,
+      :osx => '10.15',
+      :tvos => tvos_deployment_target
+    }
+    unit_tests.source_files = [
+      'FirebaseCore/Tests/Unit/**/*.[mh]',
+      'SharedTestUtilities/FIROptionsMock.[mh]',
+    ]
 
-      unit_tests.requires_app_host = true
-      unit_tests.dependency 'OCMock'
-      unit_tests.dependency 'HeartbeatLoggingTestUtils'
-      unit_tests.resources = 'FirebaseCore/Tests/Unit/Resources/GoogleService-Info.plist'
-    end
+    unit_tests.requires_app_host = true
+    unit_tests.dependency 'OCMock'
+    unit_tests.resources = 'FirebaseCore/Tests/Unit/Resources/GoogleService-Info.plist'
   end
 
   s.test_spec 'swift-unit' do |swift_unit_tests|
@@ -96,6 +95,7 @@ Firebase Core includes FIRApp and FIROptions which provide central configuration
     swift_unit_tests.pod_target_xcconfig = {
       'SWIFT_OBJC_BRIDGING_HEADER' => '$(PODS_TARGET_SRCROOT)/FirebaseCore/Tests/SwiftUnit/FirebaseCore-unit-Bridging-Header.h'
     }
+    swift_unit_tests.requires_app_host = true
     swift_unit_tests.dependency 'OCMock'
     swift_unit_tests.resources = 'FirebaseCore/Tests/Unit/Resources/GoogleService-Info.plist'
   end

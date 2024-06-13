@@ -28,6 +28,7 @@
 #include "Firestore/core/src/nanopb/byte_string.h"
 #include "Firestore/core/src/nanopb/message.h"
 #include "Firestore/core/src/remote/serializer.h"
+#include "Firestore/core/src/util/hard_assert.h"
 #include "Firestore/core/test/unit/nanopb/nanopb_testing.h"
 #include "Firestore/core/test/unit/testutil/status_testing.h"
 #include "Firestore/core/test/unit/testutil/testutil.h"
@@ -42,7 +43,6 @@ namespace {
 
 using google::protobuf::Message;
 using google::protobuf::util::MessageDifferencer;
-using google::protobuf::util::MessageToJsonString;
 using nlohmann::json;
 using ProtoBundledDocumentMetadata = ::firestore::BundledDocumentMetadata;
 using ProtoBundleMetadata = ::firestore::BundleMetadata;
@@ -69,6 +69,11 @@ using util::JsonReader;
 
 json Parse(const std::string& s) {
   return json::parse(s, /*callback=*/nullptr, /*allow_exception=*/false);
+}
+
+void MessageToJsonString(const Message& message, std::string* output) {
+  auto status = google::protobuf::util::MessageToJsonString(message, output);
+  HARD_ASSERT(status.ok());
 }
 
 class BundleSerializerTest : public ::testing::Test {
@@ -1159,6 +1164,38 @@ TEST_F(BundleSerializerTest, DecodeInvalidBundledDocumentMetadataFails) {
     bundle_serializer.DecodeDocumentMetadata(reader, Parse(json_copy));
     EXPECT_NOT_OK(reader.status());
   }
+}
+
+TEST_F(BundleSerializerTest, DecodeTargetWithoutImplicitOrderByOnName) {
+  std::string json(
+      R"({"name":"myNamedQuery",
+"bundledQuery":{"parent":"projects/p/databases/default/documents",
+"structuredQuery":{"from":[{"collectionId":"foo"}],
+"limit":{"value":10}},"limitType":"FIRST"},
+"readTime":{"seconds":"1679674432","nanos":579934000}})");
+  JsonReader reader;
+  auto named_query = bundle_serializer.DecodeNamedQuery(reader, Parse(json));
+  EXPECT_OK(reader.status());
+  EXPECT_EQ(testutil::Query("foo").WithLimitToFirst(10).ToTarget(),
+            named_query.bundled_query().target());
+  EXPECT_EQ(core::LimitType::First, named_query.bundled_query().limit_type());
+}
+
+TEST_F(BundleSerializerTest,
+       DecodeLimitToLastTargetWithoutImplicitOrderByOnName) {
+  std::string json(
+      R"({"name":"myNamedQuery",
+"bundledQuery":{"parent":"projects/p/databases/default/documents",
+"structuredQuery":{"from":[{"collectionId":"foo"}],
+"limit":{"value":10}},"limitType":"LAST"},
+"readTime":{"seconds":"1679674432","nanos":579934000}})");
+  JsonReader reader;
+  auto named_query = bundle_serializer.DecodeNamedQuery(reader, Parse(json));
+  EXPECT_OK(reader.status());
+  // Note `WithLimitToFirst(10)` is expected.
+  EXPECT_EQ(testutil::Query("foo").WithLimitToFirst(10).ToTarget(),
+            named_query.bundled_query().target());
+  EXPECT_EQ(core::LimitType::Last, named_query.bundled_query().limit_type());
 }
 
 }  //  namespace

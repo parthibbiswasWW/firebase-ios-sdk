@@ -44,9 +44,9 @@
 
 import Combine
 import FirebaseAuth
+import FirebaseCombineSwift
 import FirebaseCore
 import FirebaseStorage
-import FirebaseCombineSwift
 import XCTest
 
 class StorageIntegration: XCTestCase {
@@ -84,7 +84,7 @@ class StorageIntegration: XCTestCase {
         let bundle = Bundle(for: StorageIntegration.self)
         let filePath = try XCTUnwrap(bundle.path(forResource: "1mb", ofType: "dat"),
                                      "Failed to get filePath")
-        let data = try XCTUnwrap(try Data(contentsOf: URL(fileURLWithPath: filePath)),
+        let data = try XCTUnwrap(Data(contentsOf: URL(fileURLWithPath: filePath)),
                                  "Failed to load file")
 
         for file in largeFiles + emptyFiles {
@@ -633,7 +633,7 @@ class StorageIntegration: XCTestCase {
     let kFIRStorageIntegrationTestTimeout = 30.0
     waitForExpectations(timeout: kFIRStorageIntegrationTestTimeout,
                         handler: { error in
-                          if let error = error {
+                          if let error {
                             print(error)
                           }
                         })

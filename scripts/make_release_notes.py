@@ -22,8 +22,6 @@ import re
 import subprocess
 import string
 
-import six
-
 NO_HEADING = 'PRODUCT HAS NO HEADING'
 
 
@@ -44,6 +42,7 @@ PRODUCTS = {
     'FirebaseFunctions/CHANGELOG.md': '{{cloud_functions}}',
     'FirebaseRemoteConfig/CHANGELOG.md': '{{remote_config}}',
     'FirebasePerformance/CHANGELOG.md': '{{perfmon}}',
+    'FirebaseVertexAI/CHANGELOG.md': '{{firebase_vertexai}}',
 }
 
 
@@ -78,8 +77,8 @@ def main():
 
 
 def find_local_repo():
-  url = six.ensure_text(
-      subprocess.check_output(['git', 'config', '--get', 'remote.origin.url']))
+  url = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'],
+                                text=True, errors='replace')
 
   # ssh or https style URL
   m = re.match(r'^(?:git@github\.com:|https://github\.com/)(.*)\.git$', url)

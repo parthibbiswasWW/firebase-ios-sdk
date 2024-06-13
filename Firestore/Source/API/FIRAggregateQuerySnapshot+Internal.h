@@ -16,15 +16,22 @@
 
 #import "FIRAggregateQuerySnapshot.h"
 
+#import "FIRAggregateField.h"
+#import "FIRDocumentSnapshot.h"
+
+#include "Firestore/core/src/api/api_fwd.h"
+
 @class FIRAggregateQuery;
+
+namespace model = firebase::firestore::model;
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface FIRAggregateQuerySnapshot (/* init */)
 
 - (instancetype)init NS_UNAVAILABLE;
-- (instancetype)initWithCount:(int64_t)result
-                        query:(FIRAggregateQuery *)query NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObject:(model::ObjectValue)result
+                         query:(FIRAggregateQuery *)query NS_DESIGNATED_INITIALIZER;
 
 @end
 

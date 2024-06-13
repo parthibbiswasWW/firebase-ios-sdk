@@ -41,6 +41,7 @@
 #include "Firestore/core/src/bundle/bundle_reader.h"
 #include "Firestore/core/src/bundle/bundle_serializer.h"
 #include "Firestore/core/src/core/field_filter.h"
+#import "Firestore/core/src/core/listen_options.h"
 #include "Firestore/core/src/credentials/user.h"
 #include "Firestore/core/src/local/persistence.h"
 #include "Firestore/core/src/local/target_data.h"
@@ -56,6 +57,7 @@
 #include "Firestore/core/src/model/types.h"
 #include "Firestore/core/src/nanopb/message.h"
 #include "Firestore/core/src/nanopb/nanopb_util.h"
+#include "Firestore/core/src/remote/bloom_filter.h"
 #include "Firestore/core/src/remote/existence_filter.h"
 #include "Firestore/core/src/remote/serializer.h"
 #include "Firestore/core/src/remote/watch_change.h"
@@ -71,16 +73,19 @@
 #include "Firestore/core/src/util/to_string.h"
 #include "Firestore/core/test/unit/testutil/testutil.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/escaping.h"
 #include "absl/types/optional.h"
 
 namespace objc = firebase::firestore::objc;
 using firebase::firestore::Error;
 using firebase::firestore::google_firestore_v1_ArrayValue;
 using firebase::firestore::google_firestore_v1_Value;
+using firebase::firestore::api::ListenSource;
 using firebase::firestore::api::LoadBundleTask;
 using firebase::firestore::bundle::BundleReader;
 using firebase::firestore::bundle::BundleSerializer;
 using firebase::firestore::core::DocumentViewChange;
+using firebase::firestore::core::ListenOptions;
 using firebase::firestore::core::Query;
 using firebase::firestore::credentials::User;
 using firebase::firestore::local::Persistence;
@@ -98,6 +103,8 @@ using firebase::firestore::model::TargetId;
 using firebase::firestore::nanopb::ByteString;
 using firebase::firestore::nanopb::MakeByteString;
 using firebase::firestore::nanopb::Message;
+using firebase::firestore::remote::BloomFilter;
+using firebase::firestore::remote::BloomFilterParameters;
 using firebase::firestore::remote::DocumentWatchChange;
 using firebase::firestore::remote::ExistenceFilter;
 using firebase::firestore::remote::ExistenceFilterWatchChange;
@@ -115,6 +122,7 @@ using firebase::firestore::util::MakeString;
 using firebase::firestore::util::MakeStringPtr;
 using firebase::firestore::util::Path;
 using firebase::firestore::util::Status;
+using firebase::firestore::util::StatusOr;
 using firebase::firestore::util::TimerId;
 using firebase::firestore::util::ToString;
 using firebase::firestore::util::WrapCompare;
@@ -204,7 +212,7 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
 @end
 
 @implementation FSTSpecTests {
-  BOOL _gcEnabled;
+  BOOL _useEagerGCForMemory;
   size_t _maxConcurrentLimboResolutions;
   BOOL _networkEnabled;
   FSTUserDataReader *_reader;
@@ -217,7 +225,7 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
                                                             __func__]                              \
                         userInfo:nil];
 
-- (std::unique_ptr<Persistence>)persistenceWithGCEnabled:(__unused BOOL)GCEnabled {
+- (std::unique_ptr<Persistence>)persistenceWithEagerGCForMemory:(__unused BOOL)eagerGC {
   @throw FSTAbstractMethodException();  // NOLINT
 }
 
@@ -237,9 +245,9 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
   std::unique_ptr<Executor> user_executor = Executor::CreateSerial("user executor");
   user_executor_ = absl::ShareUniquePtr(std::move(user_executor));
 
-  // Store GCEnabled so we can re-use it in doRestart.
-  NSNumber *GCEnabled = config[@"useGarbageCollection"];
-  _gcEnabled = [GCEnabled boolValue];
+  // Store eagerGCForMemory so we can re-use it in doRestart.
+  NSNumber *eagerGCForMemory = config[@"useEagerGCForMemory"];
+  _useEagerGCForMemory = [eagerGCForMemory boolValue];
   NSNumber *maxConcurrentLimboResolutions = config[@"maxConcurrentLimboResolutions"];
   _maxConcurrentLimboResolutions = (maxConcurrentLimboResolutions == nil)
                                        ? std::numeric_limits<size_t>::max()
@@ -248,9 +256,11 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
   if (numClients) {
     XCTAssertEqualObjects(numClients, @1, @"The iOS client does not support multi-client tests");
   }
-  std::unique_ptr<Persistence> persistence = [self persistenceWithGCEnabled:_gcEnabled];
+  std::unique_ptr<Persistence> persistence =
+      [self persistenceWithEagerGCForMemory:_useEagerGCForMemory];
   self.driver =
       [[FSTSyncEngineTestDriver alloc] initWithPersistence:std::move(persistence)
+                                                   eagerGC:_useEagerGCForMemory
                                                initialUser:User::Unauthenticated()
                                          outstandingWrites:{}
                              maxConcurrentLimboResolutions:_maxConcurrentLimboResolutions];
@@ -325,6 +335,43 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
   return Version(version.longLongValue);
 }
 
+- (absl::optional<BloomFilterParameters>)parseBloomFilterParameter:
+    (NSDictionary *_Nullable)bloomFilterProto {
+  if (bloomFilterProto == nil) {
+    return absl::nullopt;
+  }
+  NSDictionary *bitsData = bloomFilterProto[@"bits"];
+
+  // Decode base64 string into uint8_t vector. If bitmap is not specified in proto, use default
+  // empty string.
+  NSString *bitmapEncoded = bitsData[@"bitmap"];
+  std::string bitmapDecoded;
+  absl::Base64Unescape([bitmapEncoded cStringUsingEncoding:NSASCIIStringEncoding], &bitmapDecoded);
+  ByteString bitmap(bitmapDecoded);
+
+  // If not specified in proto, default padding and hashCount to 0.
+  int32_t padding = [bitsData[@"padding"] intValue];
+  int32_t hashCount = [bloomFilterProto[@"hashCount"] intValue];
+  return BloomFilterParameters{std::move(bitmap), padding, hashCount};
+}
+
+- (QueryPurpose)parseQueryPurpose:(NSString *)value {
+  if ([value isEqualToString:@"TargetPurposeListen"]) {
+    return QueryPurpose::Listen;
+  }
+  if ([value isEqualToString:@"TargetPurposeExistenceFilterMismatch"]) {
+    return QueryPurpose::ExistenceFilterMismatch;
+  }
+  if ([value isEqualToString:@"TargetPurposeExistenceFilterMismatchBloom"]) {
+    return QueryPurpose::ExistenceFilterMismatchBloom;
+  }
+  if ([value isEqualToString:@"TargetPurposeLimboResolution"]) {
+    return QueryPurpose::LimboResolution;
+  }
+  XCTFail(@"unknown query purpose value: %@", value);
+  return QueryPurpose::Listen;
+}
+
 - (DocumentViewChange)parseChange:(NSDictionary *)jsonDoc ofType:(DocumentViewChange::Type)type {
   NSNumber *version = jsonDoc[@"version"];
   NSDictionary *options = jsonDoc[@"options"];
@@ -341,11 +388,25 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
   return DocumentViewChange{std::move(doc), type};
 }
 
+- (ListenOptions)parseOptions:(NSDictionary *)optionsSpec {
+  ListenOptions options = ListenOptions::FromIncludeMetadataChanges(true);
+
+  if (optionsSpec != nil) {
+    ListenSource source =
+        [optionsSpec[@"source"] isEqual:@"cache"] ? ListenSource::Cache : ListenSource::Default;
+    // include_metadata_changes are default to true in spec tests
+    options = ListenOptions::FromOptions(true, source);
+  }
+
+  return options;
+}
+
 #pragma mark - Methods for doing the steps of the spec test.
 
 - (void)doListen:(NSDictionary *)listenSpec {
   Query query = [self parseQuery:listenSpec[@"query"]];
-  TargetId actualID = [self.driver addUserListenerWithQuery:std::move(query)];
+  ListenOptions options = [self parseOptions:listenSpec[@"options"]];
+  TargetId actualID = [self.driver addUserListenerWithQuery:std::move(query) options:options];
 
   TargetId expectedID = [listenSpec[@"targetId"] intValue];
   XCTAssertEqual(actualID, expectedID, @"targetID assigned to listen");
@@ -463,14 +524,16 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
   }
 }
 
-- (void)doWatchFilter:(NSArray *)watchFilter {
-  NSArray<NSNumber *> *targets = watchFilter[0];
+- (void)doWatchFilter:(NSDictionary *)watchFilter {
+  NSArray<NSString *> *keys = watchFilter[@"keys"];
+  NSArray<NSNumber *> *targets = watchFilter[@"targetIds"];
   HARD_ASSERT(targets.count == 1, "ExistenceFilters currently support exactly one target only.");
 
-  int keyCount = watchFilter.count == 0 ? 0 : (int)watchFilter.count - 1;
+  absl::optional<BloomFilterParameters> bloomFilterParameters =
+      [self parseBloomFilterParameter:watchFilter[@"bloomFilter"]];
 
-  ExistenceFilter filter{keyCount};
-  ExistenceFilterWatchChange change{filter, targets[0].intValue};
+  ExistenceFilter filter{static_cast<int>(keys.count), std::move(bloomFilterParameters)};
+  ExistenceFilterWatchChange change{std::move(filter), targets[0].intValue};
   [self.driver receiveWatchChange:change snapshotVersion:SnapshotVersion::None()];
 }
 
@@ -558,6 +621,10 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
   [self.driver enableNetwork];
 }
 
+- (void)doTriggerLruGC:(NSNumber *)threshold {
+  [self.driver triggerLruGC:threshold];
+}
+
 - (void)doChangeUser:(nullable id)UID {
   if ([UID isEqual:[NSNull null]]) {
     UID = nil;
@@ -573,9 +640,11 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
 
   [self.driver shutdown];
 
-  std::unique_ptr<Persistence> persistence = [self persistenceWithGCEnabled:_gcEnabled];
+  std::unique_ptr<Persistence> persistence =
+      [self persistenceWithEagerGCForMemory:_useEagerGCForMemory];
   self.driver =
       [[FSTSyncEngineTestDriver alloc] initWithPersistence:std::move(persistence)
+                                                   eagerGC:_useEagerGCForMemory
                                                initialUser:currentUser
                                          outstandingWrites:outstandingWrites
                              maxConcurrentLimboResolutions:_maxConcurrentLimboResolutions];
@@ -639,6 +708,8 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
     }
   } else if (step[@"changeUser"]) {
     [self doChangeUser:step[@"changeUser"]];
+  } else if (step[@"triggerLruGC"]) {
+    [self doTriggerLruGC:step[@"triggerLruGC"]];
   } else if (step[@"restart"]) {
     [self doRestart];
   } else if (step[@"applyClientState"]) {
@@ -679,8 +750,18 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
     }
 
     XCTAssertEqual(actual.viewSnapshot.value().document_changes().size(), expectedChanges.size());
-    for (size_t i = 0; i != expectedChanges.size(); ++i) {
-      XCTAssertTrue((actual.viewSnapshot.value().document_changes()[i] == expectedChanges[i]));
+
+    auto comparator = [](const DocumentViewChange &lhs, const DocumentViewChange &rhs) {
+      return lhs.document()->key() < rhs.document()->key();
+    };
+
+    std::vector<DocumentViewChange> expectedChangesSorted = expectedChanges;
+    std::sort(expectedChangesSorted.begin(), expectedChangesSorted.end(), comparator);
+    std::vector<DocumentViewChange> actualChangesSorted =
+        actual.viewSnapshot.value().document_changes();
+    std::sort(actualChangesSorted.begin(), actualChangesSorted.end(), comparator);
+    for (size_t i = 0; i != expectedChangesSorted.size(); ++i) {
+      XCTAssertTrue((actualChangesSorted[i] == expectedChangesSorted[i]));
     }
 
     BOOL expectedHasPendingWrites =
@@ -772,7 +853,7 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
 
               QueryPurpose purpose = QueryPurpose::Listen;
               if ([queryData objectForKey:@"targetPurpose"] != nil) {
-                purpose = static_cast<QueryPurpose>([queryData[@"targetPurpose"] intValue]);
+                purpose = [self parseQueryPurpose:queryData[@"targetPurpose"]];
               }
 
               TargetData target_data(query.ToTarget(), targetID, 0, purpose);
@@ -782,6 +863,10 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
               } else {
                 target_data = target_data.WithResumeToken(
                     ByteString(), [self parseVersion:queryData[@"readTime"]]);
+              }
+
+              if ([queryData objectForKey:@"expectedCount"] != nil) {
+                target_data = target_data.WithExpectedCount([queryData[@"expectedCount"] intValue]);
               }
               queries.push_back(std::move(target_data));
             }
@@ -901,7 +986,13 @@ NSString *ToTargetIdListString(const ActiveTargetMap &map) {
     XCTAssertEqual(actual.target_id(), targetData.target_id());
     XCTAssertEqual(actual.snapshot_version(), targetData.snapshot_version());
     XCTAssertEqual(actual.resume_token(), targetData.resume_token());
-
+    if (targetData.expected_count().has_value()) {
+      if (!actual.expected_count().has_value()) {
+        XCTFail(@"Actual target data doesn't have an expected_count.");
+      } else {
+        XCTAssertEqual(actual.expected_count().value(), targetData.expected_count().value());
+      }
+    }
     actualTargets.erase(targetID);
   }
 

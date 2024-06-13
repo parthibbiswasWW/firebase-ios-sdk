@@ -18,10 +18,16 @@
 // See go/firebase-macos-keychain-popups for more details.
 #if !targetEnvironment(macCatalyst) && !os(macOS)
 
-  import XCTest
   @testable import FirebaseCore
   @testable import FirebaseInstallations
   @testable import FirebaseMLModelDownloader
+  import XCTest
+  #if SWIFT_PACKAGE
+    @_implementationOnly import GoogleUtilities_Logger
+    @_implementationOnly import GoogleUtilities_UserDefaults
+  #else
+    @_implementationOnly import GoogleUtilities
+  #endif // SWIFT_PACKAGE
 
   /// Mock options to configure default Firebase app.
   private enum MockOptions {
@@ -241,12 +247,10 @@
 
     /// Test how URL conversion behaves if there are spaces in the path.
     func testURLConversion() {
-      /// Spaces in the string only convert to URL when using URL(fileURLWithPath: ).
       let fakeURLWithSpace = URL(string: "file:///fakeDir1/fake%20Dir2/fakeFile")!
 
       XCTAssertEqual(fakeURLWithSpace, URL(string: fakeURLWithSpace.absoluteString))
       XCTAssertEqual(fakeURLWithSpace, URL(fileURLWithPath: fakeURLWithSpace.path))
-      XCTAssertNil(URL(string: fakeURLWithSpace.path))
 
       /// Strings without spaces should work fine either way.
       let fakeURLWithoutSpace = URL(string: "fakeDir1/fakeDir2/fakeFile")!
@@ -1327,19 +1331,18 @@
     }
   }
 
-  extension UserDefaults {
-    /// Returns a new cleared instance of user defaults.
-    static func createUnitTestInstance(testName: String) -> UserDefaults {
+  extension GULUserDefaults {
+    /// Returns a new instance of user defaults.
+    static func createUnitTestInstance(testName: String) -> GULUserDefaults {
       let suiteName = "com.google.firebase.ml.test.\(testName)"
-      let defaults = UserDefaults(suiteName: suiteName)!
-      defaults.removePersistentDomain(forName: suiteName)
+      let defaults = GULUserDefaults(suiteName: suiteName)
       return defaults
     }
 
     /// Returns the existing user defaults instance.
-    static func getUnitTestInstance(testName: String) -> UserDefaults {
+    static func getUnitTestInstance(testName: String) -> GULUserDefaults {
       let suiteName = "com.google.firebase.ml.test.\(testName)"
-      return UserDefaults(suiteName: suiteName)!
+      return GULUserDefaults(suiteName: suiteName)
     }
   }
 

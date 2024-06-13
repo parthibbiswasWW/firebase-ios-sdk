@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import XCTest
 import FirebaseAuth
+import XCTest
 
 class AccountInfoTests: TestsBase {
   /** The testing email address for testCreateAccountWithEmailAndPassword. */
@@ -43,7 +43,7 @@ class AccountInfoTests: TestsBase {
     let auth = Auth.auth()
     let expectation1 = expectation(description: "Created account with email and password.")
     auth.createUser(withEmail: kOldUserEmail, password: "password") { user, error in
-      if let error = error {
+      if let error {
         XCTAssertEqual((error as NSError).code,
                        AuthErrorCode.emailAlreadyInUse.rawValue,
                        "Created a user despite it already exiting.")
@@ -75,29 +75,27 @@ class AccountInfoTests: TestsBase {
     waitForExpectations(timeout: TestsBase.kExpectationsTimeout)
   }
 
-  #if compiler(>=5.5.2) && canImport(_Concurrency)
-    @available(iOS 13, tvOS 13, macOS 10.15, watchOS 7, *)
-    func testUpdatingUsersEmailAsync() async throws {
-      let auth = Auth.auth()
-      do {
-        _ = try await auth.createUser(withEmail: kOldUserEmail, password: "password")
-        XCTFail("Did not get error for recreating a user")
-      } catch {
-        XCTAssertEqual((error as NSError).code,
-                       AuthErrorCode.emailAlreadyInUse.rawValue,
-                       "Created a user despite it already exiting.")
-      }
-
-      let user = try await auth.signIn(withEmail: kOldUserEmail, password: "password")
-      XCTAssertEqual(user.user.email, kOldUserEmail)
-      XCTAssertEqual(auth.currentUser?.email,
-                     kOldUserEmail,
-                     "Signed user does not match request.")
-
-      try await auth.currentUser?.updateEmail(to: kNewUserEmail)
-      XCTAssertEqual(auth.currentUser?.email,
-                     kNewUserEmail,
-                     "Signed user does not match change.")
+  @available(iOS 13, tvOS 13, macOS 10.15, watchOS 7, *)
+  func testUpdatingUsersEmailAsync() async throws {
+    let auth = Auth.auth()
+    do {
+      _ = try await auth.createUser(withEmail: kOldUserEmail, password: "password")
+      XCTFail("Did not get error for recreating a user")
+    } catch {
+      XCTAssertEqual((error as NSError).code,
+                     AuthErrorCode.emailAlreadyInUse.rawValue,
+                     "Created a user despite it already exiting.")
     }
-  #endif
+
+    let user = try await auth.signIn(withEmail: kOldUserEmail, password: "password")
+    XCTAssertEqual(user.user.email, kOldUserEmail)
+    XCTAssertEqual(auth.currentUser?.email,
+                   kOldUserEmail,
+                   "Signed user does not match request.")
+
+    try await auth.currentUser?.updateEmail(to: kNewUserEmail)
+    XCTAssertEqual(auth.currentUser?.email,
+                   kNewUserEmail,
+                   "Signed user does not match change.")
+  }
 }

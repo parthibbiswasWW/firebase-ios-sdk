@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'FirebaseCoreInternal'
-  s.version          = '10.8.0'
+  s.version          = '10.28.0'
   s.summary          = 'APIs for internal FirebaseCore usage.'
 
   s.description      = <<-DESC
@@ -32,43 +32,40 @@ Pod::Spec.new do |s|
     'FirebaseCore/Internal/Sources/**/*.swift'
   ]
 
+  s.resource_bundles = {
+    "#{s.module_name}_Privacy" => 'FirebaseCore/Internal/Sources/Resources/PrivacyInfo.xcprivacy'
+  }
+
   s.swift_version = '5.3'
 
   s.dependency 'GoogleUtilities/NSData+zlib', '~> 7.8'
 
-  # Using environment variable because of the dependency on the unpublished
-  # HeartbeatLoggingTestUtils.
-  if ENV['POD_LIB_LINT_ONLY'] && ENV['POD_LIB_LINT_ONLY'] == '1' then
-    s.test_spec 'Unit' do |unit_tests|
-      unit_tests.scheme = { :code_coverage => true }
-      unit_tests.platforms = {
-        :ios => ios_deployment_target,
-        :osx => osx_deployment_target,
-        :tvos => tvos_deployment_target
-      }
-      unit_tests.source_files = [
-        'FirebaseCore/Internal/Tests/Unit/**/*.swift',
-        'FirebaseCore/Internal/Tests/Common/**/*.swift',
-      ]
-      unit_tests.requires_app_host = true
-      unit_tests.dependency 'HeartbeatLoggingTestUtils'
-    end
-
-    s.test_spec 'Integration' do |int_tests|
-      int_tests.scheme = { :code_coverage => true }
-      int_tests.platforms = {
-        :ios => ios_deployment_target,
-        :osx => osx_deployment_target,
-        :tvos => tvos_deployment_target
-      }
-
-      int_tests.source_files = [
-        'FirebaseCore/Internal/Tests/Integration/**/*.swift',
-        'FirebaseCore/Internal/Tests/Common/**/*.swift',
-      ]
-      int_tests.requires_app_host = true
-      int_tests.dependency 'HeartbeatLoggingTestUtils'
-    end
+  s.test_spec 'Unit' do |unit_tests|
+    unit_tests.scheme = { :code_coverage => true }
+    unit_tests.platforms = {
+      :ios => '13.0',
+      :osx => '10.15',
+      :tvos => '13.0'
+    }
+    unit_tests.source_files = [
+      'FirebaseCore/Internal/Tests/Unit/**/*.swift',
+      'FirebaseCore/Internal/Tests/Common/**/*.swift',
+    ]
+    unit_tests.requires_app_host = true
   end
 
+  s.test_spec 'Integration' do |int_tests|
+    int_tests.scheme = { :code_coverage => true }
+    int_tests.platforms = {
+      :ios => ios_deployment_target,
+      :osx => osx_deployment_target,
+      :tvos => tvos_deployment_target
+    }
+
+    int_tests.source_files = [
+      'FirebaseCore/Internal/Tests/Integration/**/*.swift',
+      'FirebaseCore/Internal/Tests/Common/**/*.swift',
+    ]
+    int_tests.requires_app_host = true
+  end
 end

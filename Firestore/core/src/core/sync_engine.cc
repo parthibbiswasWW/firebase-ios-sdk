@@ -28,6 +28,7 @@
 #include "Firestore/core/src/local/local_write_result.h"
 #include "Firestore/core/src/local/query_result.h"
 #include "Firestore/core/src/local/target_data.h"
+#include "Firestore/core/src/model/aggregate_field.h"
 #include "Firestore/core/src/model/document_key.h"
 #include "Firestore/core/src/model/document_key_set.h"
 #include "Firestore/core/src/model/document_set.h"
@@ -56,6 +57,7 @@ using local::LocalWriteResult;
 using local::QueryPurpose;
 using local::QueryResult;
 using local::TargetData;
+using model::AggregateField;
 using model::BatchId;
 using model::DocumentKey;
 using model::DocumentKeySet;
@@ -102,7 +104,7 @@ void SyncEngine::AssertCallbackExists(absl::string_view source) {
               "Tried to call '%s' before callback was registered.", source);
 }
 
-TargetId SyncEngine::Listen(Query query) {
+TargetId SyncEngine::Listen(Query query, bool should_listen_to_remote) {
   AssertCallbackExists("Listen");
 
   HARD_ASSERT(query_views_by_query_.find(query) == query_views_by_query_.end(),
@@ -111,7 +113,6 @@ TargetId SyncEngine::Listen(Query query) {
   TargetData target_data = local_store_->AllocateTarget(query.ToTarget());
   TargetId target_id = target_data.target_id();
   nanopb::ByteString resume_token = target_data.resume_token();
-  remote_store_->Listen(std::move(target_data));
 
   ViewSnapshot view_snapshot = InitializeViewAndComputeSnapshot(
       query, target_id, std::move(resume_token));
@@ -120,6 +121,9 @@ TargetId SyncEngine::Listen(Query query) {
   snapshots.push_back(std::move(view_snapshot));
   sync_engine_callback_->OnViewSnapshots(std::move(snapshots));
 
+  if (should_listen_to_remote) {
+    remote_store_->Listen(std::move(target_data));
+  }
   return target_id;
 }
 
@@ -159,22 +163,48 @@ ViewSnapshot SyncEngine::InitializeViewAndComputeSnapshot(
   return view_change.snapshot().value();
 }
 
-void SyncEngine::StopListening(const Query& query) {
-  AssertCallbackExists("StopListening");
+void SyncEngine::ListenToRemoteStore(Query query) {
+  AssertCallbackExists("ListenToRemoteStore");
+  TargetData target_data = local_store_->AllocateTarget(query.ToTarget());
+  remote_store_->Listen(std::move(target_data));
+}
 
+void SyncEngine::StopListening(const Query& query,
+                               bool should_stop_remote_listening) {
+  AssertCallbackExists("StopListening");
+  StopListeningAndReleaseTarget(query, /** last_listen= */ true,
+                                should_stop_remote_listening);
+}
+
+void SyncEngine::StopListeningToRemoteStoreOnly(const Query& query) {
+  AssertCallbackExists("StopListeningToRemoteStoreOnly");
+  StopListeningAndReleaseTarget(query, /** last_listen= */ false,
+                                /** should_stop_remote_listening= */ true);
+}
+
+void SyncEngine::StopListeningAndReleaseTarget(
+    const Query& query, bool last_listen, bool should_stop_remote_listening) {
   auto query_view = query_views_by_query_[query];
   HARD_ASSERT(query_view, "Trying to stop listening to a query not found");
 
-  query_views_by_query_.erase(query);
+  if (last_listen) {
+    query_views_by_query_.erase(query);
+  }
 
+  // One target could have multiple queries mapped to it.
   TargetId target_id = query_view->target_id();
   auto& queries = queries_by_target_[target_id];
   queries.erase(std::remove(queries.begin(), queries.end(), query),
                 queries.end());
 
-  if (queries.empty()) {
-    local_store_->ReleaseTarget(target_id);
+  if (!queries.empty()) return;
+
+  if (should_stop_remote_listening) {
     remote_store_->StopListening(target_id);
+  }
+
+  if (last_listen) {
+    local_store_->ReleaseTarget(target_id);
     RemoveAndCleanupTarget(target_id, Status::OK());
   }
 }
@@ -250,9 +280,12 @@ void SyncEngine::Transaction(int max_attempts,
   runner->Run();
 }
 
-void SyncEngine::RunCountQuery(const core::Query& query,
-                               api::CountQueryCallback&& result_callback) {
-  remote_store_->RunCountQuery(query, std::move(result_callback));
+void SyncEngine::RunAggregateQuery(
+    const core::Query& query,
+    const std::vector<model::AggregateField>& aggregates,
+    api::AggregateQueryCallback&& result_callback) {
+  remote_store_->RunAggregateQuery(query, aggregates,
+                                   std::move(result_callback));
 }
 
 void SyncEngine::HandleCredentialChange(const credentials::User& user) {
@@ -340,7 +373,7 @@ void SyncEngine::HandleRejectedListen(TargetId target_id, Status error) {
     // copy-initialization" error.
     DocumentKeySet limbo_documents{limbo_key};
     RemoteEvent::TargetChangeMap target_changes;
-    RemoteEvent::TargetSet target_mismatches;
+    RemoteEvent::TargetMismatchMap target_mismatches;
     DocumentUpdateMap document_updates{{limbo_key, doc}};
 
     RemoteEvent event{SnapshotVersion::None(), std::move(target_changes),
@@ -490,15 +523,24 @@ void SyncEngine::EmitNewSnapshotsAndNotifyLocalStore(
     }
 
     absl::optional<TargetChange> target_changes;
+    bool targetIsPendingReset = false;
     if (maybe_remote_event.has_value()) {
       const RemoteEvent& remote_event = maybe_remote_event.value();
-      auto it = remote_event.target_changes().find(query_view->target_id());
-      if (it != remote_event.target_changes().end()) {
-        target_changes = it->second;
+      auto changes_iter =
+          remote_event.target_changes().find(query_view->target_id());
+      if (changes_iter != remote_event.target_changes().end()) {
+        target_changes = changes_iter->second;
+      }
+
+      auto mismatches_iter =
+          remote_event.target_mismatches().find(query_view->target_id());
+      if (mismatches_iter != remote_event.target_mismatches().end()) {
+        targetIsPendingReset = true;
       }
     }
-    ViewChange view_change =
-        view.ApplyChanges(view_doc_changes, target_changes);
+
+    ViewChange view_change = view.ApplyChanges(view_doc_changes, target_changes,
+                                               targetIsPendingReset);
 
     UpdateTrackedLimboDocuments(view_change.limbo_changes(),
                                 query_view->target_id());
