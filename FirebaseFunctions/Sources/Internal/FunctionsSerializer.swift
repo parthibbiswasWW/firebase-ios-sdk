@@ -76,7 +76,7 @@ class FUNSerializer: NSObject {
     if let dict = object as? NSDictionary {
       if let requestedType = dict["@type"] as? String {
         guard let value = dict["value"] as? String else {
-          // Seems like we should throw here - but this maintains compatiblity.
+          // Seems like we should throw here - but this maintains compatibility.
           return dict
         }
         let result = try decodeWrappedType(requestedType, value)
@@ -133,6 +133,7 @@ class FUNSerializer: NSObject {
     case CChar("q".utf8.first!):
       // "long long" might be larger than JS supports, so make it a string.
       return ["@type": Constants.longType, "value": "\(number)"] as AnyObject
+
     case CChar("Q".utf8.first!):
       // "unsigned long long" might be larger than JS supports, so make it a string.
       return ["@type": Constants.unsignedLongType,
@@ -174,6 +175,7 @@ class FUNSerializer: NSObject {
         throw SerializerError.invalidValueForType(value: value, requestedType: type)
       }
       return n
+
     case Constants.unsignedLongType:
       // NSNumber formatter doesn't handle unsigned long long, so we have to parse it.
       let str = (value as NSString).utf8String

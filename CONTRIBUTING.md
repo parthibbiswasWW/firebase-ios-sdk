@@ -182,7 +182,7 @@ To learn more about running tests with Swift Package Manager, visit the
 [Testing](#testing) section.
 
 <!-- SwiftPM troubleshooting -->
-<!-- TODO: Common issues and fixes like resolve depencies & reset cache. -->
+<!-- TODO: Common issues and fixes like resolve dependencies & reset cache. -->
 
 #### **[CocoaPods]**
 
@@ -316,7 +316,7 @@ Refer to the following resources when writing Swift or Objective-C code.
 
 This is a general overview of what the Git workflow may look like, from start to
 finish, when contributing code to Firebase.
-The below snippet is purely for reference purposes and is used to demonstarate
+The below snippet is purely for reference purposes and is used to demonstrate
 what the workflow may look like, from start to finish.
 <details>
 <summary>View the workflow</summary>
@@ -425,7 +425,7 @@ following criteria:
 2. The committed code has been styled in accordance with this repo's style
    guidelines.
 3. A CHANGELOG has been updated to reflect the PR's associated changes.
-4. Unit and/or integration tests have been added or updatd to test and
+4. Unit and/or integration tests have been added or updatde to test and
    validate the contribution's changes.
 5. Refer to the
    [Contributor License Agreement](#contributor-license-agreement) section below

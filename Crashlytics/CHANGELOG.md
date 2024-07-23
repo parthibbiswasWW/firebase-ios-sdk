@@ -1,3 +1,6 @@
+# 10.28.1
+- [changed] Reverted "Add SIGTERM support (#12881)" (#13117)
+
 # 10.28.0
 - [fixed] Created a new queue for rollouts persistence writes and made sure rollouts logging queue is not nil while dispatching (#12913).
 
@@ -75,7 +78,7 @@
 # 8.2.0
 - [changed] Incorporated code quality changes around integer overflow, potential race conditions, and reinstalling signal handlers.
 - [fixed] Fixed an issue where iOS-only apps running on iPads would report iOS as their OS Name.
-- [fixed] Fixed depcrecation warning for projects with minimum deployment version iOS 13 and up.
+- [fixed] Fixed deprecation warning for projects with minimum deployment version iOS 13 and up.
 
 # 8.0.0
 - [changed] Added a warning to upload-symbols when it detects a dSYM with hidden symbols.

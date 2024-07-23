@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import FirebaseFirestore
-@testable import FirebaseFirestoreSwift
+import class FirebaseCore.Timestamp
+@testable import FirebaseFirestore
 import Foundation
 
 class CodableIntegrationTests: FSTIntegrationTestCase {
