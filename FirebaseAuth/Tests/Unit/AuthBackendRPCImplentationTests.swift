@@ -433,7 +433,7 @@ class AuthBackendRPCImplementationTests: RPCBaseTests {
     let request = FakeRequest(withRequestBody: [:])
     let responseError = NSError(domain: kFakeErrorDomain, code: kFakeErrorCode)
     rpcIssuer.respondBlock = {
-      try self.rpcIssuer.respond(withJSON: [:], error: responseError)
+      let _ = try self.rpcIssuer.respond(withJSON: [:], error: responseError)
     }
     do {
       let _ = try await rpcImplementation.call(with: request)
@@ -593,7 +593,7 @@ class AuthBackendRPCImplementationTests: RPCBaseTests {
 
       // Then
       let expectedHeader = HeartbeatLoggingTestUtils.nonEmptyHeartbeatsPayload.headerValue()
-      let completeRequest = try XCTUnwrap(rpcIssuer.completeRequest)
+      let completeRequest = await rpcIssuer.completeRequest.value
       let headerValue = completeRequest.value(forHTTPHeaderField: "X-Firebase-Client")
       XCTAssertEqual(headerValue, expectedHeader)
     }
@@ -616,8 +616,9 @@ class AuthBackendRPCImplementationTests: RPCBaseTests {
         // Just force return from async call.
         try self.rpcIssuer.respond(withJSON: [:])
       }
-      _ = try await rpcImplementation.call(with: request)
-      let completeRequest = try XCTUnwrap(rpcIssuer.completeRequest)
+      _ = try? await rpcImplementation.call(with: request)
+
+      let completeRequest = await rpcIssuer.completeRequest.value
       let headerValue = completeRequest.value(forHTTPHeaderField: "X-Firebase-AppCheck")
       XCTAssertEqual(headerValue, fakeAppCheck.fakeAppCheckToken)
     }
@@ -648,7 +649,7 @@ class AuthBackendRPCImplementationTests: RPCBaseTests {
       _ = try? await rpcImplementation.call(with: request)
 
       // Then
-      let completeRequest = try XCTUnwrap(rpcIssuer.completeRequest)
+      let completeRequest = await rpcIssuer.completeRequest.value
       XCTAssertNil(completeRequest.value(forHTTPHeaderField: "X-Firebase-Client"))
     }
   #endif // COCOAPODS || SWIFT_PACKAGE

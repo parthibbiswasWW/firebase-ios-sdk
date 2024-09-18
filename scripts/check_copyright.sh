@@ -24,6 +24,8 @@ options=(
 list=$(git grep "${options[@]}" -- \
     '*.'{c,cc,cmake,h,js,m,mm,py,rb,sh,swift} \
     CMakeLists.txt '**/CMakeLists.txt' \
+    ':(exclude)Sources/ProtoGen' \
+    ':(exclude)third_party/**' \
     ':(exclude)**/third_party/**')
 
 # Allow copyrights before 2020 without LLC.
